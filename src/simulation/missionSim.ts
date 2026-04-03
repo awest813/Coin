@@ -70,7 +70,7 @@ export function simulateMission(
   const possibleItems = template.reward.possibleItems;
   const itemsEarned: string[] = [];
   for (let i = 0; i < lootCount; i++) {
-    const idx = Math.floor(seededRandom(seed + i + outcome) * possibleItems.length);
+    const idx = Math.floor(seededRandom(`${seed}-${i}-${outcome}`) * possibleItems.length);
     itemsEarned.push(possibleItems[idx]);
   }
 
