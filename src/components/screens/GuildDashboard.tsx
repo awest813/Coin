@@ -128,7 +128,7 @@ export function GuildDashboard() {
                       </div>
                     )}
                     <div className="text-xs text-stone-400 mb-2">
-                      Upgrade cost: {cost!.gold}g · {cost!.supplies} supplies · {cost!.renown} renown
+                      Upgrade cost: {cost?.gold ?? 0}g · {cost?.supplies ?? 0} supplies · {cost?.renown ?? 0} renown
                     </div>
                     <button
                       onClick={() => upgradeRoom(room.id)}
