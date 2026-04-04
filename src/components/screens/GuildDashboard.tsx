@@ -1,7 +1,19 @@
-import { useGameStore } from '~/store/gameStore';
+import { useGameStore, getGuildRankName, getNextRankThreshold } from '~/store/gameStore';
+
+const RANK_THRESHOLDS = [0, 5, 15, 30, 50];
 
 export function GuildDashboard() {
-  const { guild, mercenaries, activeMission, resetSave, setScreen, upgradeRoom } = useGameStore();
+  const {
+    guild,
+    mercenaries,
+    activeMission,
+    resetSave,
+    setScreen,
+    upgradeRoom,
+    pendingEvents,
+    dismissEvent,
+    resolveEventChoice,
+  } = useGameStore();
   const availableMercs = mercenaries.filter((m) => !m.isInjured && !m.isFatigued);
   const injuredMercs = mercenaries.filter((m) => m.isInjured);
   const fatiguedMercs = mercenaries.filter((m) => m.isFatigued && !m.isInjured);
@@ -21,9 +33,30 @@ export function GuildDashboard() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-amber-400 mb-1">🏰 {guild.name}</h1>
-        <p className="text-stone-400 text-sm">
-          A mercenary guild with a reputation — or the beginning of one.
-        </p>
+        <div className="flex items-center gap-3 mt-1">
+          <span className="text-stone-300 text-sm font-medium">
+            Rank {guild.guildRank}: {getGuildRankName(guild.guildRank)}
+          </span>
+          <span className="text-stone-500 text-xs">{guild.completedContracts} contracts completed</span>
+        </div>
+        {/* Rank progress bar */}
+        {guild.guildRank < 5 && (
+          <div className="mt-2 max-w-xs">
+            <div className="flex justify-between text-xs text-stone-500 mb-1">
+              <span>{RANK_THRESHOLDS[guild.guildRank - 1]} contracts</span>
+              <span>{getNextRankThreshold(guild.guildRank)} contracts (Rank {guild.guildRank + 1})</span>
+            </div>
+            <div className="bg-stone-700 rounded-full h-1.5">
+              <div
+                className="bg-amber-500 h-1.5 rounded-full transition-all"
+                style={{
+                  width: `${Math.min(100, ((guild.completedContracts - RANK_THRESHOLDS[guild.guildRank - 1]) /
+                    (getNextRankThreshold(guild.guildRank) - RANK_THRESHOLDS[guild.guildRank - 1])) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Resources */}
@@ -40,6 +73,70 @@ export function GuildDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Pending Events */}
+      {pendingEvents.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-stone-200 font-semibold mb-3">
+            📢 Pending Events
+            <span className="ml-2 bg-amber-500 text-stone-950 text-xs font-bold px-1.5 py-0.5 rounded-full">
+              {pendingEvents.length}
+            </span>
+          </h2>
+          <div className="space-y-3">
+            {pendingEvents.slice(0, 3).map((event) => (
+              <div key={event.id} className="bg-stone-800 border border-amber-800 rounded-lg p-4">
+                <div className="font-medium text-amber-400 mb-1">{event.title}</div>
+                <p className="text-stone-300 text-sm mb-3">{event.text}</p>
+                {event.choices ? (
+                  <div className="flex flex-wrap gap-2">
+                    {event.choices.map((choice, i) => (
+                      <button
+                        key={i}
+                        onClick={() => resolveEventChoice(event.id, i)}
+                        className="px-3 py-1.5 bg-stone-700 hover:bg-amber-700 text-stone-200 text-xs rounded transition-colors"
+                      >
+                        {choice.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : event.autoOutcome ? (
+                  <button
+                    onClick={() => resolveEventChoice(event.id, -1)}
+                    className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs rounded transition-colors"
+                  >
+                    {event.autoOutcome.label}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => dismissEvent(event.id)}
+                    className="text-xs text-stone-500 hover:text-stone-300"
+                  >
+                    Dismiss
+                  </button>
+                )}
+              </div>
+            ))}
+            {pendingEvents.length > 3 && (
+              <p className="text-stone-500 text-xs">+{pendingEvents.length - 3} more events pending</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Unlocked Regions */}
+      {guild.unlockedRegions.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-stone-200 font-semibold mb-2">🗺️ Unlocked Regions</h2>
+          <div className="flex flex-wrap gap-2">
+            {guild.unlockedRegions.map((region) => (
+              <span key={region} className="px-3 py-1 bg-stone-800 border border-stone-700 rounded text-stone-300 text-sm">
+                {region}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Status */}
       <div className="grid grid-cols-2 gap-4 mb-6">

@@ -337,4 +337,115 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
       'Someone heard their own name whispered, somewhere behind the wallpaper.',
     ],
   },
+  // ── Phase 2 additions ────────────────────────────────────────────────────────
+  {
+    id: 'mission_plague_village',
+    name: 'Plague Village Survey',
+    description:
+      'A village south of Ashfen has gone silent. The council needs an assessment — and survivors, if any.',
+    tags: ['social', 'exploration'],
+    difficulty: 8,
+    durationLabel: '3 days',
+    reward: {
+      gold: 90,
+      renown: 10,
+      possibleItems: ['road_rations', 'worn_map', 'lucky_charm', 'herbs_bundle'],
+    },
+    flavorText: {
+      success:
+        'The village had survivors. Thirty-two, hidden in the mill. The survey data reached the council in time.',
+      partial:
+        'The survey was completed but exposure delayed the party. Information delivered late, fee reduced.',
+      failure:
+        'The village was a trap. Whatever ailed it was deliberate. The party left quickly and empty-handed.',
+    },
+    eventSnippets: [
+      'A child was found alone in a locked root cellar. She would not speak.',
+      'The well water smelled wrong. Nobody drank it.',
+      'Signs of recent visitors — not survivors. Someone else was investigating first.',
+    ],
+  },
+  {
+    id: 'mission_night_ambush',
+    name: 'Night Ambush Defense',
+    description:
+      'A supply convoy carrying critical goods must pass through a known ambush corridor. Hold the road.',
+    tags: ['combat', 'escort'],
+    difficulty: 14,
+    durationLabel: '1 day',
+    reward: {
+      gold: 160,
+      renown: 16,
+      possibleItems: ['chain_mail', 'soldier_sword', 'reinforced_shield', 'iron_sword', 'padded_tunic'],
+    },
+    flavorText: {
+      success:
+        'Three waves, all repelled. The convoy arrived. The commander shook hands and doubled the rate.',
+      partial:
+        'The convoy got through but the last wave hit hard. Two wagons lost. Payment adjusted.',
+      failure:
+        'The ambush was coordinated and overwhelming. The convoy scattered. No survivors among the escort.',
+    },
+    eventSnippets: [
+      'The first wave was a feint. Bram called it before anyone else moved.',
+      'Torches out. Fighting in the dark, by sound alone.',
+      'A horse panicked and broke formation. The gap nearly cost them everything.',
+      'Aldric held a choke point alone for four minutes. He counted.',
+    ],
+  },
+  {
+    id: 'mission_ancient_library',
+    name: 'Ancient Library Delve',
+    description:
+      'A partially collapsed library beneath a known ruin reportedly holds intact texts. Recover what you can.',
+    tags: ['ruin', 'exploration'],
+    difficulty: 11,
+    durationLabel: '4 days',
+    reward: {
+      gold: 120,
+      renown: 14,
+      possibleItems: ['grimoire_fragment', 'runed_amulet', 'oracle_lens', 'worn_map'],
+    },
+    flavorText: {
+      success:
+        'Three intact codices and a map of something older than the city above it. Worth every bruise.',
+      partial:
+        'Some texts recovered but the lower floors were flooded. Half the archive was lost.',
+      failure:
+        'The library collapsed further during the delve. Nobody was hurt, but nothing was recovered.',
+    },
+    eventSnippets: [
+      "Oryn could read the script on the lower shelves. He wouldn't translate it all.",
+      'Something in the dark moved the candles. Twice.',
+      'The air was stale and strange. Everyone kept their torches close.',
+      'A still-sealed vault door was found. They didn\'t have time to open it.',
+    ],
+  },
+  {
+    id: 'mission_tournament_proxy',
+    name: 'Tournament Proxy',
+    description:
+      'A minor lord cannot compete in the regional tournament personally. He needs a skilled proxy fighter — and someone to manage the politics.',
+    tags: ['combat', 'social'],
+    difficulty: 10,
+    durationLabel: '2 days',
+    reward: {
+      gold: 115,
+      renown: 13,
+      possibleItems: ['soldier_sword', 'chain_mail', 'sigil_badge', 'scouts_cloak', 'lucky_charm'],
+    },
+    flavorText: {
+      success:
+        "First place, clean victory. The lord was ecstatic. His rivals were not. Good for the guild's reputation.",
+      partial:
+        'Runner-up. The lord is satisfied but muted. Some coin, some goodwill, not the prize.',
+      failure:
+        'Disqualified in the second round over a disputed rule. The lord blamed the guild. Loudly.',
+    },
+    eventSnippets: [
+      'A rival proxy tried to bribe the party before the final bout. They declined.',
+      'The crowd was partial to the home favorite. Presence made up the difference.',
+      'The lord kept sending notes with tactical advice. Caden ignored all of them.',
+    ],
+  },
 ];

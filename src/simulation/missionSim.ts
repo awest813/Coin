@@ -142,6 +142,8 @@ function pickEventSnippets(
 export interface SimulationOptions {
   /** Current forge room level (1–3); affects loot quantity/quality */
   forgeLevel?: number;
+  /** Consumable item IDs assigned to this mission */
+  consumableItemIds?: string[];
 }
 
 export function simulateMission(
@@ -154,7 +156,25 @@ export function simulateMission(
   const scoreBreakdown: ScoreBreakdownEntry[] = mercs.map((m) =>
     scoreMercDetailed(m, template, partyMercIds)
   );
-  const partyScore = scoreBreakdown.reduce((sum, e) => sum + e.total, 0);
+  let partyScore = scoreBreakdown.reduce((sum, e) => sum + e.total, 0);
+
+  // Consumable effects
+  const consumables = options.consumableItemIds ?? [];
+  let injuryProtection = 0;
+  let fatigueProtection = 0;
+  let smokeUsed = false;
+  for (const itemId of consumables) {
+    switch (itemId) {
+      case 'bandages': injuryProtection += 0.2; break;
+      case 'field_rations': fatigueProtection += 0.2; break;
+      case 'torch_bundle':
+        if (template.tags.includes('ruin') || template.tags.includes('exploration')) partyScore += 1;
+        break;
+      case 'lucky_salve': partyScore += 0.5; break;
+      case 'smoke_bomb': smokeUsed = true; break;
+    }
+  }
+
   const roll = seededRandom(seed + template.id);
 
   // margin: positive = over-performed, negative = under-performed
@@ -166,7 +186,8 @@ export function simulateMission(
   } else if (margin >= 0) {
     outcome = 'partial';
   } else {
-    outcome = 'failure';
+    // smoke bomb converts first failure to partial
+    outcome = smokeUsed ? 'partial' : 'failure';
   }
 
   // Gold and renown based on outcome
@@ -191,11 +212,11 @@ export function simulateMission(
   const fatiguedMercIds: string[] = [];
   for (const merc of mercs) {
     const r = seededRandom(seed + merc.id + 'status');
-    if (outcome === 'failure' && r < 0.4) {
+    if (outcome === 'failure' && r < Math.max(0.05, 0.4 - injuryProtection)) {
       injuredMercIds.push(merc.id);
-    } else if (outcome === 'partial' && r < 0.25) {
+    } else if (outcome === 'partial' && r < Math.max(0.05, 0.25 - fatigueProtection)) {
       fatiguedMercIds.push(merc.id);
-    } else if (outcome === 'success' && r < 0.1) {
+    } else if (outcome === 'success' && r < Math.max(0, 0.1 - fatigueProtection)) {
       fatiguedMercIds.push(merc.id);
     }
   }

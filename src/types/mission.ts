@@ -46,6 +46,8 @@ export interface ActiveMission {
   assignedMercIds: string[];
   /** ISO timestamp when mission was sent */
   startedAt: string;
+  /** item IDs of consumables used on this mission */
+  consumablesAssigned?: string[];
 }
 
 export interface MissionResult {

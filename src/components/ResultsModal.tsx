@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useGameStore } from '~/store/gameStore';
 import { ITEMS_MAP } from '~/data/items';
+import { MATERIALS_MAP } from '~/data/materials';
+import { bondScoreToSentiment } from '~/simulation/bondSim';
 
 const OUTCOME_STYLE = {
   success: { label: '✅ Success!', color: 'text-green-400', bg: 'bg-green-900/30', border: 'border-green-700' },
@@ -15,13 +17,42 @@ const RARITY_COLORS: Record<string, string> = {
   legendary: 'text-purple-400',
 };
 
+// Extended result type with Phase 2 fields
+interface ExtendedMissionResult {
+  outcome: 'success' | 'partial' | 'failure';
+  partyScore: number;
+  difficulty: number;
+  narrativeEvents: string[];
+  goldEarned: number;
+  renownEarned: number;
+  itemsEarned: string[];
+  injuredMercIds: string[];
+  fatiguedMercIds: string[];
+  scoreBreakdown: Array<{
+    mercName: string;
+    baseScore: number;
+    traitBonus: number;
+    equipBonus: number;
+    relBonus: number;
+    statusPenalty: number;
+    total: number;
+  }>;
+  bondChanges?: Array<{ mercId1: string; mercId2: string; delta: number }>;
+  materialsEarned?: Record<string, number>;
+}
+
 export function ResultsModal() {
-  const { lastResult, showResultModal, dismissResult, mercenaries } = useGameStore();
+  const { lastResult, showResultModal, dismissResult, mercenaries, setScreen } = useGameStore();
   const [showBreakdown, setShowBreakdown] = useState(false);
 
   if (!showResultModal || !lastResult) return null;
 
-  const style = OUTCOME_STYLE[lastResult.outcome];
+  const result = lastResult as unknown as ExtendedMissionResult;
+  const style = OUTCOME_STYLE[result.outcome];
+
+  const bondChanges = result.bondChanges ?? [];
+  const materialsEarned = result.materialsEarned ?? {};
+  const hasMaterials = Object.values(materialsEarned).some((q) => q > 0);
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -30,14 +61,14 @@ export function ResultsModal() {
         <div className="text-center mb-4">
           <h2 className={`text-2xl font-bold ${style.color}`}>{style.label}</h2>
           <p className="text-stone-400 text-sm mt-1">
-            Party score <span className="text-stone-200 font-medium">{lastResult.partyScore}</span> vs difficulty <span className="text-stone-200 font-medium">{lastResult.difficulty}</span>
+            Party score <span className="text-stone-200 font-medium">{result.partyScore}</span> vs difficulty <span className="text-stone-200 font-medium">{result.difficulty}</span>
           </p>
         </div>
 
         {/* Narrative events */}
-        {lastResult.narrativeEvents.length > 0 && (
+        {result.narrativeEvents.length > 0 && (
           <div className="mb-4 space-y-2">
-            {lastResult.narrativeEvents.map((text, i) => (
+            {result.narrativeEvents.map((text, i) => (
               <p
                 key={i}
                 className={`text-sm italic leading-relaxed ${i === 0 ? 'text-stone-200' : 'text-stone-400'}`}
@@ -51,21 +82,40 @@ export function ResultsModal() {
         {/* Gold & Renown */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-stone-800/80 rounded-lg p-3 text-center">
-            <div className="text-amber-400 font-bold text-lg">+{lastResult.goldEarned}g</div>
+            <div className="text-amber-400 font-bold text-lg">+{result.goldEarned}g</div>
             <div className="text-stone-400 text-xs">Gold Earned</div>
           </div>
           <div className="bg-stone-800/80 rounded-lg p-3 text-center">
-            <div className="text-yellow-400 font-bold text-lg">+{lastResult.renownEarned}</div>
+            <div className="text-yellow-400 font-bold text-lg">+{result.renownEarned}</div>
             <div className="text-stone-400 text-xs">Renown Gained</div>
           </div>
         </div>
 
+        {/* Materials */}
+        {hasMaterials && (
+          <div className="mb-4">
+            <h4 className="text-stone-300 text-sm font-medium mb-2">📦 Materials Found</h4>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(materialsEarned)
+                .filter(([, qty]) => qty > 0)
+                .map(([matId, qty]) => {
+                  const mat = MATERIALS_MAP[matId];
+                  return mat ? (
+                    <span key={matId} className="text-xs bg-stone-800 px-2 py-1 rounded border border-stone-700 text-stone-300">
+                      {mat.icon} {mat.name} x{qty}
+                    </span>
+                  ) : null;
+                })}
+            </div>
+          </div>
+        )}
+
         {/* Loot */}
-        {lastResult.itemsEarned.length > 0 && (
+        {result.itemsEarned.length > 0 && (
           <div className="mb-4">
             <h4 className="text-stone-300 text-sm font-medium mb-2">⚗️ Loot Found</h4>
             <div className="flex flex-wrap gap-2">
-              {lastResult.itemsEarned.map((id, i) => {
+              {result.itemsEarned.map((id, i) => {
                 const item = ITEMS_MAP[id];
                 return item ? (
                   <span
@@ -81,12 +131,37 @@ export function ResultsModal() {
           </div>
         )}
 
+        {/* Bond changes */}
+        {bondChanges.length > 0 && (
+          <div className="mb-4">
+            <h4 className="text-stone-300 text-sm font-medium mb-2">💞 Bond Changes</h4>
+            <div className="space-y-1">
+              {bondChanges.map((bc, i) => {
+                const m1 = mercenaries.find((m) => m.id === bc.mercId1);
+                const m2 = mercenaries.find((m) => m.id === bc.mercId2);
+                if (!m1 || !m2) return null;
+                const newScore1 = (m1.bondScores?.[bc.mercId2] ?? 0);
+                const sentiment = bondScoreToSentiment(newScore1);
+                return (
+                  <div key={i} className="text-xs text-stone-400">
+                    {m1.name} & {m2.name}:{' '}
+                    <span className={bc.delta > 0 ? 'text-green-400' : 'text-red-400'}>
+                      {bc.delta > 0 ? '+' : ''}{bc.delta.toFixed(1)}
+                    </span>
+                    {' '}→ <span className="text-stone-300">{sentiment}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Casualties */}
-        {(lastResult.injuredMercIds.length > 0 || lastResult.fatiguedMercIds.length > 0) && (
+        {(result.injuredMercIds.length > 0 || result.fatiguedMercIds.length > 0) && (
           <div className="mb-4">
             <h4 className="text-stone-300 text-sm font-medium mb-2">🩹 Casualties</h4>
             <div className="flex flex-wrap gap-2">
-              {lastResult.injuredMercIds.map((id) => {
+              {result.injuredMercIds.map((id) => {
                 const m = mercenaries.find((x) => x.id === id);
                 return m ? (
                   <span key={id} className="text-xs bg-red-900/50 text-red-300 px-2 py-1 rounded">
@@ -94,7 +169,7 @@ export function ResultsModal() {
                   </span>
                 ) : null;
               })}
-              {lastResult.fatiguedMercIds.map((id) => {
+              {result.fatiguedMercIds.map((id) => {
                 const m = mercenaries.find((x) => x.id === id);
                 return m ? (
                   <span key={id} className="text-xs bg-yellow-900/50 text-yellow-300 px-2 py-1 rounded">
@@ -107,7 +182,7 @@ export function ResultsModal() {
         )}
 
         {/* Score Breakdown toggle */}
-        {lastResult.scoreBreakdown.length > 0 && (
+        {result.scoreBreakdown.length > 0 && (
           <div className="mb-4">
             <button
               onClick={() => setShowBreakdown((v) => !v)}
@@ -117,7 +192,7 @@ export function ResultsModal() {
             </button>
             {showBreakdown && (
               <div className="mt-2 bg-stone-900/60 rounded-lg p-3 space-y-2">
-                {lastResult.scoreBreakdown.map((entry, i) => (
+                {result.scoreBreakdown.map((entry, i) => (
                   <div key={i} className="text-xs">
                     <div className="flex justify-between text-stone-300 font-medium mb-0.5">
                       <span>{entry.mercName}</span>
@@ -144,19 +219,27 @@ export function ResultsModal() {
                 ))}
                 <div className="border-t border-stone-700 pt-2 flex justify-between text-xs text-stone-400">
                   <span>Total party score</span>
-                  <span className="text-amber-400 font-bold">{lastResult.partyScore}</span>
+                  <span className="text-amber-400 font-bold">{result.partyScore}</span>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        <button
-          onClick={() => { dismissResult(); setShowBreakdown(false); }}
-          className="w-full py-2 rounded bg-amber-700 hover:bg-amber-600 text-white font-medium transition-colors"
-        >
-          Back to Guild Hall
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => { dismissResult(); setShowBreakdown(false); }}
+            className="flex-1 py-2 rounded bg-amber-700 hover:bg-amber-600 text-white font-medium transition-colors"
+          >
+            Back to Guild Hall
+          </button>
+          <button
+            onClick={() => { dismissResult(); setShowBreakdown(false); setScreen('roster'); }}
+            className="px-4 py-2 rounded bg-stone-700 hover:bg-stone-600 text-stone-200 text-sm transition-colors"
+          >
+            View Roster
+          </button>
+        </div>
       </div>
     </div>
   );
