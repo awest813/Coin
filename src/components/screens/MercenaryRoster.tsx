@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '~/store/gameStore';
 import { MercCard } from '~/components/MercCard';
 import { ItemCard } from '~/components/ItemCard';
+import { bondScoreToSentiment } from '~/simulation/bondSim';
 import type { Mercenary, EquipmentSlot } from '~/types/mercenary';
 
 const SLOTS: { slot: EquipmentSlot; label: string; icon: string }[] = [
@@ -21,6 +22,8 @@ const SENTIMENT_ICON: Record<string, string> = {
   rival: '⚡',
   neutral: '—',
   bonded: '🔗',
+  friendly: '💚',
+  close: '💛',
 };
 
 const SENTIMENT_COLOR: Record<string, string> = {
@@ -28,6 +31,8 @@ const SENTIMENT_COLOR: Record<string, string> = {
   rival: 'text-red-400',
   neutral: 'text-stone-400',
   bonded: 'text-purple-400',
+  friendly: 'text-green-400',
+  close: 'text-yellow-400',
 };
 
 export function MercenaryRoster() {
@@ -95,6 +100,9 @@ export function MercenaryRoster() {
               <h2 className="text-xl font-bold text-stone-100">{selectedLive.name}</h2>
               <p className="text-stone-400 text-sm">{selectedLive.title}</p>
               <p className="text-stone-500 text-xs mt-0.5">{selectedLive.missionsCompleted} missions completed</p>
+              {selectedLive.background && (
+                <p className="text-stone-400 text-xs italic mt-1">&ldquo;{selectedLive.background}&rdquo;</p>
+              )}
             </div>
           </div>
 
@@ -259,6 +267,32 @@ export function MercenaryRoster() {
                     </span>
                   ) : null;
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Bond scores */}
+          {Object.keys(selectedLive.bondScores ?? {}).length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-stone-400 text-xs uppercase tracking-wider mb-2">Bonds</h4>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(selectedLive.bondScores ?? {})
+                  .filter(([, s]) => s !== 0)
+                  .map(([otherId, score]) => {
+                    const other = mercenaries.find((m) => m.id === otherId);
+                    if (!other) return null;
+                    const sentiment = bondScoreToSentiment(score);
+                    return (
+                      <span
+                        key={otherId}
+                        className={`text-xs px-2 py-0.5 rounded bg-stone-700 ${SENTIMENT_COLOR[sentiment] ?? 'text-stone-300'}`}
+                        title={`Bond score: ${score.toFixed(1)}`}
+                      >
+                        {SENTIMENT_ICON[sentiment] ?? '—'} {other.name}
+                        <span className="text-stone-500 ml-1">({score > 0 ? '+' : ''}{score.toFixed(1)})</span>
+                      </span>
+                    );
+                  })}
               </div>
             </div>
           )}

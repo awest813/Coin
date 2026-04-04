@@ -27,4 +27,8 @@ export interface Guild {
   resources: GuildResources;
   rooms: RoomUpgrade[];
   inventoryItemIds: string[]; // item IDs in stash (may have duplicates)
+  materials: Record<string, number>; // materialId -> quantity
+  guildRank: number; // 1-5
+  completedContracts: number; // total missions completed
+  unlockedRegions: string[];
 }

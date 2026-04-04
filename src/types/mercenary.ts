@@ -54,4 +54,8 @@ export interface Mercenary {
   loyalty: number;
   /** missions completed */
   missionsCompleted: number;
+  /** Optional flavor text line shown on detail panel */
+  background?: string;
+  /** Bond scores with other mercs: mercId -> -10 to +10 */
+  bondScores?: Record<string, number>;
 }
