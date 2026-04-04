@@ -198,7 +198,7 @@ export const RECRUIT_ARCHETYPES: RecruitArchetype[] = [
       'Three arrests, none of them stuck.',
       'Grew up on the street. Learned to read people before they learned to read.',
       'Going legitimate was someone else\'s idea. Still not sure it was better.',
-      'Can unlock most things in under a minute. Wont say how.',
+      'Can unlock most things in under a minute. Won\'t say how.',
     ],
     hireCostBase: 60,
   },
