@@ -1,0 +1,115 @@
+import type { Mercenary } from '~/types/mercenary';
+
+export const INITIAL_MERCENARIES: Mercenary[] = [
+  {
+    id: 'merc_aldric',
+    name: 'Aldric Vane',
+    title: 'Veteran Swordhand',
+    portrait: '⚔️',
+    stats: { strength: 8, agility: 5, intellect: 4, presence: 6 },
+    traits: [
+      {
+        id: 'trait_brave',
+        name: 'Brave',
+        tag: 'brave',
+        description: 'Does not hesitate when things go sideways.',
+        scoreBonus: 2,
+      },
+      {
+        id: 'trait_loyal',
+        name: 'Loyal',
+        tag: 'loyal',
+        description: 'Would take a blow for a guild-mate.',
+        scoreBonus: 1,
+      },
+    ],
+    relationships: [],
+    equipment: {},
+    isInjured: false,
+    isFatigued: false,
+    missionsCompleted: 0,
+  },
+  {
+    id: 'merc_syla',
+    name: 'Syla Dusk',
+    title: 'Shadow Runner',
+    portrait: '🗡️',
+    stats: { strength: 4, agility: 9, intellect: 6, presence: 5 },
+    traits: [
+      {
+        id: 'trait_stealthy',
+        name: 'Stealthy',
+        tag: 'stealthy',
+        description: 'Moves without sound. Rarely seen first.',
+        scoreBonus: 3,
+      },
+      {
+        id: 'trait_cautious',
+        name: 'Cautious',
+        tag: 'cautious',
+        description: 'Scouts ahead. Reduces risk of ambush.',
+        scoreBonus: 1,
+      },
+    ],
+    relationships: [
+      { mercId: 'merc_aldric', sentiment: 'friend' },
+    ],
+    equipment: {},
+    isInjured: false,
+    isFatigued: false,
+    missionsCompleted: 0,
+  },
+  {
+    id: 'merc_oryn',
+    name: 'Oryn Fels',
+    title: 'Wandering Scholar',
+    portrait: '📜',
+    stats: { strength: 3, agility: 5, intellect: 9, presence: 7 },
+    traits: [
+      {
+        id: 'trait_scholarly',
+        name: 'Scholarly',
+        tag: 'scholarly',
+        description: 'Reads ruins and relics with ease.',
+        scoreBonus: 3,
+      },
+    ],
+    relationships: [
+      { mercId: 'merc_syla', sentiment: 'neutral' },
+    ],
+    equipment: {},
+    isInjured: false,
+    isFatigued: false,
+    missionsCompleted: 0,
+  },
+  {
+    id: 'merc_bram',
+    name: 'Bram Stoke',
+    title: 'Sellsword Brute',
+    portrait: '🛡️',
+    stats: { strength: 9, agility: 3, intellect: 2, presence: 4 },
+    traits: [
+      {
+        id: 'trait_tough',
+        name: 'Tough',
+        tag: 'tough',
+        description: 'Hard to bring down. Shrugs off glancing blows.',
+        scoreBonus: 2,
+      },
+      {
+        id: 'trait_reckless',
+        name: 'Reckless',
+        tag: 'reckless',
+        description: 'Charges in. Impressive, but costly.',
+        scoreBonus: 1,
+      },
+    ],
+    relationships: [
+      { mercId: 'merc_aldric', sentiment: 'rival' },
+    ],
+    equipment: {},
+    isInjured: false,
+    isFatigued: false,
+    missionsCompleted: 0,
+  },
+];

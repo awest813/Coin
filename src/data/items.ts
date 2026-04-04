@@ -1,0 +1,96 @@
+import type { Item } from '~/types/item';
+
+export const ITEMS: Item[] = [
+  {
+    id: 'iron_sword',
+    name: 'Iron Sword',
+    description: 'A reliable blade, worn from use.',
+    rarity: 'common',
+    category: 'weapon',
+    statBonus: { strength: 1 },
+    value: 25,
+  },
+  {
+    id: 'leather_armor',
+    name: 'Leather Armor',
+    description: 'Light protection, smells like old saddle.',
+    rarity: 'common',
+    category: 'armor',
+    statBonus: { agility: 1 },
+    value: 20,
+  },
+  {
+    id: 'lucky_charm',
+    name: 'Lucky Charm',
+    description: "A rabbit's foot on a frayed cord.",
+    rarity: 'common',
+    category: 'accessory',
+    statBonus: { presence: 1 },
+    value: 15,
+  },
+  {
+    id: 'silver_dagger',
+    name: 'Silver Dagger',
+    description: 'Effective against things that go bump in the night.',
+    rarity: 'uncommon',
+    category: 'weapon',
+    statBonus: { strength: 1, agility: 1 },
+    value: 60,
+  },
+  {
+    id: 'chain_mail',
+    name: 'Chain Mail',
+    description: 'Interlocking rings. Heavy but dependable.',
+    rarity: 'uncommon',
+    category: 'armor',
+    statBonus: { strength: 1 },
+    value: 80,
+  },
+  {
+    id: 'scouts_cloak',
+    name: "Scout's Cloak",
+    description: 'Muted colors, hood stitched with care.',
+    rarity: 'uncommon',
+    category: 'accessory',
+    statBonus: { agility: 2 },
+    value: 55,
+  },
+  {
+    id: 'grimoire_fragment',
+    name: 'Grimoire Fragment',
+    description: 'Torn pages from a larger work. Still potent.',
+    rarity: 'uncommon',
+    category: 'accessory',
+    statBonus: { intellect: 2 },
+    value: 70,
+  },
+  {
+    id: 'banner_shard',
+    name: 'Banner Shard',
+    description: "A piece of a rival guild's banner. Good for morale.",
+    rarity: 'rare',
+    category: 'trophy',
+    value: 120,
+  },
+  {
+    id: 'runed_amulet',
+    name: 'Runed Amulet',
+    description: 'Glows faintly. What does it do? Hard to say.',
+    rarity: 'rare',
+    category: 'accessory',
+    statBonus: { intellect: 2, presence: 2 },
+    value: 200,
+  },
+  {
+    id: 'ration_pack',
+    name: 'Ration Pack',
+    description: 'Dried meat and hard bread. Sustains on the road.',
+    rarity: 'common',
+    category: 'consumable',
+    value: 10,
+  },
+];
+
+export const ITEMS_MAP: Record<string, Item> = Object.fromEntries(
+  ITEMS.map((i) => [i.id, i])
+);

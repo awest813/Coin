@@ -1,26 +1,25 @@
-import CountBtn from "~/components/count-btn";
-import ReactSVG from "~/assets/react.svg";
-import { Badge } from "~/components/ui/badge";
+import { useGameStore } from '~/store/gameStore';
+import { NavBar } from '~/components/NavBar';
+import { GuildDashboard } from '~/components/screens/GuildDashboard';
+import { MercenaryRoster } from '~/components/screens/MercenaryRoster';
+import { MissionBoard } from '~/components/screens/MissionBoard';
+import { InventoryPanel } from '~/components/screens/InventoryPanel';
+import { ResultsModal } from '~/components/ResultsModal';
 
 function App() {
+  const { activeScreen } = useGameStore();
+
   return (
-    <main className="flex flex-col items-center justify-center h-screen">
-      <div className="flex flex-col items-center gap-y-4">
-        <div className="inline-flex items-center gap-x-4">
-          <img src={ReactSVG} alt="React Logo" className="w-32" />
-          <span className="text-6xl">+</span>
-          <img src={"/vite.svg"} alt="Vite Logo" className="w-32" />
-        </div>
-        <a
-          href="https://ui.shadcn.com"
-          rel="noopener noreferrer nofollow"
-          target="_blank"
-        >
-          <Badge variant="outline">shadcn/ui</Badge>
-        </a>
-        <CountBtn />
-      </div>
-    </main>
+    <div className="min-h-screen bg-stone-950 text-stone-100">
+      <NavBar />
+      <main>
+        {activeScreen === 'dashboard' && <GuildDashboard />}
+        {activeScreen === 'roster' && <MercenaryRoster />}
+        {activeScreen === 'missions' && <MissionBoard />}
+        {activeScreen === 'inventory' && <InventoryPanel />}
+      </main>
+      <ResultsModal />
+    </div>
   );
 }
 
