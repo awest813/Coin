@@ -6,7 +6,11 @@ export type TraitTag =
   | 'reckless'
   | 'scholarly'
   | 'stealthy'
-  | 'tough';
+  | 'tough'
+  | 'ruthless'
+  | 'charismatic'
+  | 'cursed'
+  | 'hunter';
 
 export interface Trait {
   id: string;
@@ -19,9 +23,11 @@ export interface Trait {
 
 export type EquipmentSlot = 'weapon' | 'armor' | 'accessory';
 
+export type RelationshipSentiment = 'friend' | 'rival' | 'neutral' | 'bonded';
+
 export interface Relationship {
   mercId: string;
-  sentiment: 'friend' | 'rival' | 'neutral';
+  sentiment: RelationshipSentiment;
 }
 
 export interface MercStats {
@@ -42,6 +48,10 @@ export interface Mercenary {
   equipment: Partial<Record<EquipmentSlot, string>>; // item IDs
   isInjured: boolean;
   isFatigued: boolean;
+  /** 0-10 morale; low morale imposes mission penalties */
+  morale: number;
+  /** 0-10 loyalty; higher loyalty means less chance of leaving / better bonded bonds */
+  loyalty: number;
   /** missions completed */
   missionsCompleted: number;
 }

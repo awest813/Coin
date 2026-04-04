@@ -4,6 +4,7 @@ import { MercCard } from '~/components/MercCard';
 import { MissionCard } from '~/components/MissionCard';
 import { MISSION_TEMPLATES } from '~/data/missions';
 import { simulateMission } from '~/simulation/missionSim';
+import { getRoomEffect } from '~/simulation/missionSim';
 import type { MissionTemplate } from '~/types/mission';
 
 export function MissionBoard() {
@@ -13,6 +14,9 @@ export function MissionBoard() {
   const [selectedMercIds, setSelectedMercIds] = useState<string[]>([]);
 
   const availableMercs = mercenaries.filter((m) => !m.isInjured);
+
+  const forgeRoom = guild.rooms.find((r) => r.id === 'room_forge');
+  const forgeLevel = forgeRoom ? getRoomEffect(forgeRoom, 'forgeLevel') : 1;
 
   function toggleMerc(id: string) {
     setSelectedMercIds((prev) =>
@@ -38,9 +42,13 @@ export function MissionBoard() {
     if (!template) return;
     const mercs = mercenaries.filter((m) => activeMission.assignedMercIds.includes(m.id));
     const seed = `${activeMission.startedAt}-${guild.resources.renown}`;
-    const result = simulateMission(mercs, template, seed);
+    const result = simulateMission(mercs, template, seed, { forgeLevel });
     applyMissionResult(result);
   }
+
+  const activeTemplate = activeMission
+    ? MISSION_TEMPLATES.find((t) => t.id === activeMission.templateId)
+    : null;
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -52,20 +60,29 @@ export function MissionBoard() {
       {/* Active mission banner */}
       {activeMission && (
         <div className="mb-6 bg-amber-900/30 border border-amber-700 rounded-lg p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-amber-300 font-semibold">Mission in Progress</h3>
               <p className="text-stone-400 text-sm mt-0.5">
-                {activeMission.assignedMercIds.length} mercs deployed on &ldquo;
-                {MISSION_TEMPLATES.find((t) => t.id === activeMission.templateId)?.name}&rdquo;
+                {activeMission.assignedMercIds.length} merc{activeMission.assignedMercIds.length !== 1 ? 's' : ''} deployed on &ldquo;
+                {activeTemplate?.name}&rdquo;
               </p>
+              {activeTemplate && (
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  {activeTemplate.tags.map((tag) => (
+                    <span key={tag} className="text-xs bg-stone-700 text-stone-300 px-2 py-0.5 rounded-full">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
               <p className="text-stone-500 text-xs mt-1">
                 Sent: {new Date(activeMission.startedAt).toLocaleString()}
               </p>
             </div>
             <button
               onClick={handleResolve}
-              className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded font-medium text-sm transition-colors"
+              className="shrink-0 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded font-medium text-sm transition-colors"
             >
               Resolve Mission
             </button>
@@ -97,7 +114,7 @@ export function MissionBoard() {
                 Assigning Party for: {selectedMission.name}
               </h3>
               <p className="text-stone-500 text-xs mb-4">
-                Select one or more available mercenaries. More mercs = higher party score.
+                Select one or more available mercenaries. More mercs = higher party score. Relationships matter.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">

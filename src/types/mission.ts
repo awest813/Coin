@@ -1,4 +1,13 @@
-export type MissionTag = 'combat' | 'stealth' | 'social' | 'exploration' | 'escort';
+export type MissionTag =
+  | 'combat'
+  | 'stealth'
+  | 'social'
+  | 'exploration'
+  | 'escort'
+  | 'hunt'
+  | 'bounty'
+  | 'ruin';
+
 export type MissionOutcome = 'success' | 'partial' | 'failure';
 
 export interface MissionReward {
@@ -6,6 +15,16 @@ export interface MissionReward {
   renown: number;
   /** item IDs that may drop */
   possibleItems: string[];
+}
+
+export interface ScoreBreakdownEntry {
+  mercName: string;
+  baseScore: number;
+  traitBonus: number;
+  equipBonus: number;
+  relBonus: number;
+  statusPenalty: number;
+  total: number;
 }
 
 export interface MissionTemplate {
@@ -18,6 +37,8 @@ export interface MissionTemplate {
   reward: MissionReward;
   /** flavor text keyed by outcome */
   flavorText: Record<MissionOutcome, string>;
+  /** optional extra flavor variants (randomly chosen in addition to base) */
+  eventSnippets?: string[];
 }
 
 export interface ActiveMission {
@@ -39,4 +60,6 @@ export interface MissionResult {
   flavorText: string;
   partyScore: number;
   difficulty: number;
+  scoreBreakdown: ScoreBreakdownEntry[];
+  narrativeEvents: string[];
 }

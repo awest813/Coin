@@ -3,7 +3,7 @@ import type { Item } from './item';
 import type { ActiveMission, MissionResult } from './mission';
 import type { Guild } from './guild';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export interface SaveData {
   version: number;
