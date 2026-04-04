@@ -8,7 +8,7 @@ export interface Item {
   rarity: ItemRarity;
   category: ItemCategory;
   /** stat bonuses when equipped */
-  statBonus?: Partial<Record<string, number>>;
+  statBonus?: Partial<Record<'strength' | 'agility' | 'intellect' | 'presence', number>>;
   /** gold value */
   value: number;
 }

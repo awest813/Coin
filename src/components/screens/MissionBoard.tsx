@@ -37,7 +37,7 @@ export function MissionBoard() {
     const template = MISSION_TEMPLATES.find((t) => t.id === activeMission.templateId);
     if (!template) return;
     const mercs = mercenaries.filter((m) => activeMission.assignedMercIds.includes(m.id));
-    const seed = activeMission.startedAt + guild.resources.renown;
+    const seed = `${activeMission.startedAt}-${guild.resources.renown}`;
     const result = simulateMission(mercs, template, seed);
     applyMissionResult(result);
   }

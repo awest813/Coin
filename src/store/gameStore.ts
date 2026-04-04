@@ -56,8 +56,8 @@ const defaultState = () => ({
   guild: defaultGuild(),
   mercenaries: INITIAL_MERCENARIES,
   items: ITEMS_MAP,
-  activeMission: null as ActiveMission | null,
-  lastResult: null as MissionResult | null,
+  activeMission: null,
+  lastResult: null,
   activeScreen: 'dashboard' as ActiveScreen,
   showResultModal: false,
 });

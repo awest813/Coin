@@ -1,6 +1,8 @@
 import type { Mercenary } from '~/types/mercenary';
 import type { MissionTemplate, MissionResult, MissionOutcome } from '~/types/mission';
 
+const MAX_UINT32 = 0xffffffff;
+
 /** Deterministic-ish pseudo-random seeded by input strings */
 function seededRandom(seed: string): number {
   let h = 2166136261;
@@ -8,7 +10,7 @@ function seededRandom(seed: string): number {
     h ^= seed.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  return ((h >>> 0) / 0xffffffff);
+  return (h >>> 0) / MAX_UINT32;
 }
 
 /** Score a single merc against a mission */
