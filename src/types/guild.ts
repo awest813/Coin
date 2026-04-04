@@ -4,14 +4,22 @@ export interface GuildResources {
   renown: number;
 }
 
+export interface RoomUpgradeLevel {
+  description: string;
+  /** Key → value pairs describing mechanical effects, e.g. { rosterCap: 8 } */
+  effects: Record<string, number>;
+  upgradeCost: GuildResources;
+}
+
 export interface RoomUpgrade {
   id: string;
   name: string;
+  icon: string;
   description: string;
   level: number;
   maxLevel: number;
-  upgradeCost: GuildResources;
-  // TODO Phase 1: unlock bonuses per level
+  /** Indexed by level 1..maxLevel */
+  levels: RoomUpgradeLevel[];
 }
 
 export interface Guild {

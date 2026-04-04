@@ -20,6 +20,9 @@ const TAG_ICONS: Record<string, string> = {
   social: '💬',
   exploration: '🗺️',
   escort: '🛡️',
+  hunt: '🏹',
+  bounty: '💰',
+  ruin: '🏚️',
 };
 
 export function MissionCard({ mission, onAssign, disabled }: Props) {
@@ -29,15 +32,15 @@ export function MissionCard({ mission, onAssign, disabled }: Props) {
     <div className="rounded-lg border border-stone-700 bg-stone-800 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="font-semibold text-stone-100">{mission.name}</h3>
-            <span className={`text-xs font-medium ${diff.color}`}>{diff.label}</span>
+            <span className={`text-xs font-medium ${diff.color}`}>{diff.label} (d{mission.difficulty})</span>
           </div>
           <p className="text-sm text-stone-400 mb-2">{mission.description}</p>
-          <div className="flex flex-wrap gap-2 text-xs">
+          <div className="flex flex-wrap gap-1.5 text-xs">
             {mission.tags.map((tag) => (
               <span key={tag} className="bg-stone-700 text-stone-300 px-2 py-0.5 rounded-full">
-                {TAG_ICONS[tag]} {tag}
+                {TAG_ICONS[tag] ?? '📌'} {tag}
               </span>
             ))}
           </div>
