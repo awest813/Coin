@@ -32,7 +32,9 @@ export function GuildDashboard() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-amber-400 mb-1">🏰 {guild.name}</h1>
+        <h1 className="text-3xl font-bold text-amber-400 mb-1 font-heading">
+          🏰 {guild.name}
+        </h1>
         <div className="flex items-center gap-3 mt-1">
           <span className="text-stone-300 text-sm font-medium">
             Rank {guild.guildRank}: {getGuildRankName(guild.guildRank)}
@@ -48,8 +50,9 @@ export function GuildDashboard() {
             </div>
             <div className="bg-stone-700 rounded-full h-1.5">
               <div
-                className="bg-amber-500 h-1.5 rounded-full transition-all"
+                className="h-1.5 rounded-full transition-all"
                 style={{
+                  background: 'linear-gradient(to right, #d97706, #fbbf24)',
                   width: `${Math.min(100, ((guild.completedContracts - RANK_THRESHOLDS[guild.guildRank - 1]) /
                     (getNextRankThreshold(guild.guildRank) - RANK_THRESHOLDS[guild.guildRank - 1])) * 100)}%`,
                 }}
@@ -66,10 +69,10 @@ export function GuildDashboard() {
           { label: 'Renown', value: guild.resources.renown, icon: '⭐', color: 'text-yellow-400' },
           { label: 'Supplies', value: guild.resources.supplies, icon: '🧴', color: 'text-green-400' },
         ].map((r) => (
-          <div key={r.label} className="bg-stone-800 rounded-lg border border-stone-700 p-4 text-center">
-            <div className="text-2xl mb-1">{r.icon}</div>
-            <div className={`text-xl font-bold ${r.color}`}>{r.value}</div>
-            <div className="text-stone-400 text-xs">{r.label}</div>
+          <div key={r.label} className="bg-gradient-to-br from-stone-800 to-stone-900 rounded-lg border border-stone-700 p-4 text-center hover:border-stone-500 transition-colors">
+            <div className="text-3xl mb-1">{r.icon}</div>
+            <div className={`text-xl font-bold font-heading ${r.color}`}>{r.value}</div>
+            <div className="text-stone-400 text-xs uppercase tracking-wider mt-0.5">{r.label}</div>
           </div>
         ))}
       </div>
@@ -183,7 +186,7 @@ export function GuildDashboard() {
 
       {/* Rooms */}
       <div className="mb-6">
-        <h2 className="text-stone-200 font-semibold mb-3">Guild Rooms</h2>
+        <h2 className="text-stone-200 font-semibold mb-3 font-heading">⚒ Guild Rooms</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {guild.rooms.map((room) => {
             const atMax = room.level >= room.maxLevel;
@@ -193,7 +196,7 @@ export function GuildDashboard() {
             const nextLevelData = atMax ? null : room.levels[room.level];
 
             return (
-              <div key={room.id} className="bg-stone-800 rounded-lg border border-stone-700 p-4">
+              <div key={room.id} className="bg-gradient-to-br from-stone-800 to-stone-900 rounded-lg border border-stone-700 p-4 hover:border-stone-600 transition-colors">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{room.icon}</span>

@@ -223,7 +223,7 @@ export function ExpeditionPanel() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-amber-400 mb-6">🗺️ Expeditions</h1>
+      <h1 className="text-2xl font-bold text-amber-400 mb-6 font-heading">🗺️ Expeditions</h1>
 
       {/* Active Expedition */}
       {activeExpedition && activeTemplate && (

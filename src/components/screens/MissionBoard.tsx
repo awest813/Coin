@@ -107,14 +107,14 @@ export function MissionBoard() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-amber-400 mb-1">📋 Mission Board</h1>
+      <h1 className="text-2xl font-bold text-amber-400 mb-1 font-heading">📋 Mission Board</h1>
       <p className="text-stone-400 text-sm mb-6">
         Active contracts available to the guild.
       </p>
 
       {/* Active mission banner */}
       {activeMission && (
-        <div className="mb-6 bg-amber-900/30 border border-amber-700 rounded-lg p-4">
+        <div className="mb-6 bg-gradient-to-br from-amber-950/40 to-stone-900 border border-amber-700 rounded-lg p-4 shadow-md shadow-amber-900/20">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-amber-300 font-semibold">Mission in Progress</h3>
