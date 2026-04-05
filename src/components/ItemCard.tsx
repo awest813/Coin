@@ -32,7 +32,7 @@ export function ItemCard({ item, count }: Props) {
             <span className={`font-semibold text-sm ${rs.text}`} style={{ fontFamily: "'Cinzel', Georgia, serif" }}>
               {item.name}
             </span>
-            {count != null && count > 1 && (
+            {count && count > 1 && (
               <span className="text-xs bg-stone-700 text-stone-300 px-1.5 rounded-full">×{count}</span>
             )}
             <span className={`text-[10px] ${rs.text} opacity-70 capitalize`}>{item.rarity}</span>
