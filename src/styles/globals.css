@@ -119,3 +119,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root {
+  --font-heading: 'Cinzel', 'Georgia', serif;
+  --font-body: 'Crimson Text', 'Georgia', serif;
+  --color-parchment: #c8a96e;
+  --color-ember: #d97706;
+  --color-blood: #991b1b;
+  --color-shadow: #1c1917;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1c1917; }
+::-webkit-scrollbar-thumb { background: #44403c; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #78716c; }
+
+.font-heading { font-family: var(--font-heading); }
+.font-body-italic { font-family: var(--font-body); font-style: italic; }
+.screen-title { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: #fbbf24; letter-spacing: 0.05em; }
+.card-rpg { background: linear-gradient(135deg, #1c1917 0%, #292524 100%); border: 1px solid #44403c; border-radius: 0.5rem; }
+.card-rpg-highlight { background: linear-gradient(135deg, #292524 0%, #1c1917 100%); border: 1px solid #d97706; border-radius: 0.5rem; }
+.rarity-common { color: #d6d3d1; }
+.rarity-uncommon { color: #4ade80; }
+.rarity-rare { color: #60a5fa; }
+.rarity-legendary { color: #c084fc; text-shadow: 0 0 8px rgba(192, 132, 252, 0.5); }
+.stat-bar-fill { transition: width 0.4s ease; }
+.badge-status { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+.glow-amber { box-shadow: 0 0 12px rgba(217, 119, 6, 0.3); }
+.separator-rune { border: none; height: 1px; background: linear-gradient(to right, transparent, #44403c 30%, #78716c 50%, #44403c 70%, transparent); margin: 1rem 0; }

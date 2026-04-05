@@ -13,7 +13,7 @@ function App() {
   const { activeScreen } = useGameStore();
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100">
+    <div className="min-h-screen bg-stone-950 text-stone-100" style={{ fontFamily: "'Crimson Text', Georgia, serif" }}>
       <NavBar />
       <main>
         {activeScreen === 'dashboard' && <GuildDashboard />}

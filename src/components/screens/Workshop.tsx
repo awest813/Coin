@@ -35,7 +35,7 @@ export function Workshop() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-amber-400">🔨 Workshop</h1>
+        <h1 className="text-2xl font-bold text-amber-400" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>🔨 Workshop</h1>
         <div className="flex gap-4 text-sm text-stone-400">
           <span>Forge Level: <span className="text-amber-400 font-bold">{forgeLevel}</span></span>
           <span>Materials: <span className="text-amber-400 font-bold">{totalMaterialCount}</span></span>
@@ -86,7 +86,7 @@ export function Workshop() {
                 return (
                   <div
                     key={recipe.id}
-                    className={`bg-stone-800 border rounded p-4 ${craftable ? 'border-amber-700' : 'border-stone-700'}`}
+                    className={`rounded p-4 transition-colors ${craftable ? 'bg-gradient-to-br from-amber-950/30 to-stone-900 border border-amber-700 shadow-sm shadow-amber-900/20' : 'bg-gradient-to-br from-stone-900 to-stone-800 border border-stone-700 opacity-80'}`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
