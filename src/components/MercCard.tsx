@@ -46,7 +46,7 @@ export function MercCard({ merc, selected, onClick, compact }: Props) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-semibold text-stone-100 truncate" style={{ fontFamily: "'Cinzel', Georgia, serif", fontSize: '0.875rem' }}>
+            <span className="font-semibold font-heading text-sm text-stone-100 truncate">
               {merc.name}
             </span>
             {merc.isInjured && (

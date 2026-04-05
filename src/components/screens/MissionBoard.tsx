@@ -107,7 +107,7 @@ export function MissionBoard() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-amber-400 mb-1" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>📋 Mission Board</h1>
+      <h1 className="text-2xl font-bold text-amber-400 mb-1 font-heading">📋 Mission Board</h1>
       <p className="text-stone-400 text-sm mb-6">
         Active contracts available to the guild.
       </p>

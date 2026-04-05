@@ -59,7 +59,7 @@ export function ResultsModal() {
       <div className={`rounded-xl border ${style.border} ${style.bg} backdrop-blur max-w-lg w-full p-6 my-4 shadow-2xl`}>
         {/* Header */}
         <div className="text-center mb-4">
-          <h2 className={`text-2xl font-bold ${style.color}`} style={{ fontFamily: "'Cinzel', Georgia, serif" }}>{style.label}</h2>
+          <h2 className={`text-2xl font-bold font-heading ${style.color}`}>{style.label}</h2>
           <p className="text-stone-400 text-sm mt-1">
             Party score <span className="text-stone-200 font-medium">{result.partyScore}</span> vs difficulty <span className="text-stone-200 font-medium">{result.difficulty}</span>
           </p>

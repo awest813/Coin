@@ -35,7 +35,7 @@ export function Workshop() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-amber-400" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>🔨 Workshop</h1>
+        <h1 className="text-2xl font-bold text-amber-400 font-heading">🔨 Workshop</h1>
         <div className="flex gap-4 text-sm text-stone-400">
           <span>Forge Level: <span className="text-amber-400 font-bold">{forgeLevel}</span></span>
           <span>Materials: <span className="text-amber-400 font-bold">{totalMaterialCount}</span></span>

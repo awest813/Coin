@@ -32,7 +32,7 @@ export function GuildDashboard() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-amber-400 mb-1" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>
+        <h1 className="text-3xl font-bold text-amber-400 mb-1 font-heading">
           🏰 {guild.name}
         </h1>
         <div className="flex items-center gap-3 mt-1">
@@ -71,7 +71,7 @@ export function GuildDashboard() {
         ].map((r) => (
           <div key={r.label} className="bg-gradient-to-br from-stone-800 to-stone-900 rounded-lg border border-stone-700 p-4 text-center hover:border-stone-500 transition-colors">
             <div className="text-3xl mb-1">{r.icon}</div>
-            <div className={`text-xl font-bold ${r.color}`} style={{ fontFamily: "'Cinzel', Georgia, serif" }}>{r.value}</div>
+            <div className={`text-xl font-bold font-heading ${r.color}`}>{r.value}</div>
             <div className="text-stone-400 text-xs uppercase tracking-wider mt-0.5">{r.label}</div>
           </div>
         ))}
@@ -186,7 +186,7 @@ export function GuildDashboard() {
 
       {/* Rooms */}
       <div className="mb-6">
-        <h2 className="text-stone-200 font-semibold mb-3" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>⚒ Guild Rooms</h2>
+        <h2 className="text-stone-200 font-semibold mb-3 font-heading">⚒ Guild Rooms</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {guild.rooms.map((room) => {
             const atMax = room.level >= room.maxLevel;

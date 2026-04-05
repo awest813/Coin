@@ -34,7 +34,7 @@ function RecruitCard({
       <div className="flex items-start gap-3">
         <span className="text-4xl">{recruit.portrait}</span>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-stone-200" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>{recruit.name}</div>
+          <div className="font-bold text-stone-200 font-heading">{recruit.name}</div>
           <div className="text-amber-400 text-sm">{recruit.title}</div>
           <div className="text-stone-400 text-xs">{recruit.classRole}</div>
         </div>
@@ -100,7 +100,7 @@ export function HiringHall() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-amber-400" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>🧑‍🤝‍🧑 Hiring Hall</h1>
+        <h1 className="text-2xl font-bold text-amber-400 font-heading">🧑‍🤝‍🧑 Hiring Hall</h1>
         <div className="flex items-center gap-4 text-sm text-stone-400">
           <span>
             Roster:{' '}

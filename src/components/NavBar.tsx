@@ -19,7 +19,7 @@ export function NavBar() {
       {/* Top row: guild name + resources */}
       <div className="px-4 py-2 flex items-center justify-between border-b border-stone-800">
         <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-bold text-lg tracking-wide" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>
+          <span className="text-amber-400 font-bold text-lg tracking-wide font-heading">
             🏴 {guild.name}
           </span>
           {pendingEvents.length > 0 && (
@@ -48,10 +48,9 @@ export function NavBar() {
             onClick={() => setScreen(item.id)}
             className={`px-3 py-1.5 rounded text-xs font-semibold transition-all duration-150 ${
               activeScreen === item.id
-                ? 'bg-amber-700 text-white shadow-md shadow-amber-900/50'
+                ? 'bg-amber-700 text-white shadow-md shadow-amber-900/50 font-heading'
                 : 'text-stone-400 hover:bg-stone-800 hover:text-stone-100'
             }`}
-            style={activeScreen === item.id ? { fontFamily: "'Cinzel', Georgia, serif" } : undefined}
           >
             {item.icon} {item.label}
           </button>

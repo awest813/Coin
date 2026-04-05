@@ -6,12 +6,14 @@ interface Props {
   disabled?: boolean;
 }
 
+const MAX_DIFFICULTY_SCALE = 20;
+
 const DIFFICULTY_CONFIG = (d: number) => {
-  if (d <= 4) return { label: 'Trivial', color: 'text-green-400', bar: 'bg-green-500', pct: (d / 20) * 100 };
-  if (d <= 7) return { label: 'Easy', color: 'text-lime-400', bar: 'bg-lime-500', pct: (d / 20) * 100 };
-  if (d <= 10) return { label: 'Moderate', color: 'text-yellow-400', bar: 'bg-yellow-500', pct: (d / 20) * 100 };
-  if (d <= 14) return { label: 'Hard', color: 'text-orange-400', bar: 'bg-orange-500', pct: (d / 20) * 100 };
-  return { label: 'Brutal', color: 'text-red-400', bar: 'bg-red-500', pct: (d / 20) * 100 };
+  if (d <= 4) return { label: 'Trivial', color: 'text-green-400', bar: 'bg-green-500', pct: (d / MAX_DIFFICULTY_SCALE) * 100 };
+  if (d <= 7) return { label: 'Easy', color: 'text-lime-400', bar: 'bg-lime-500', pct: (d / MAX_DIFFICULTY_SCALE) * 100 };
+  if (d <= 10) return { label: 'Moderate', color: 'text-yellow-400', bar: 'bg-yellow-500', pct: (d / MAX_DIFFICULTY_SCALE) * 100 };
+  if (d <= 14) return { label: 'Hard', color: 'text-orange-400', bar: 'bg-orange-500', pct: (d / MAX_DIFFICULTY_SCALE) * 100 };
+  return { label: 'Brutal', color: 'text-red-400', bar: 'bg-red-500', pct: (d / MAX_DIFFICULTY_SCALE) * 100 };
 };
 
 const TAG_ICONS: Record<string, string> = {
@@ -33,7 +35,7 @@ export function MissionCard({ mission, onAssign, disabled }: Props) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="font-semibold text-stone-100" style={{ fontFamily: "'Cinzel', Georgia, serif", fontSize: '0.9rem' }}>
+            <h3 className="font-semibold font-heading text-[0.9rem] text-stone-100">
               {mission.name}
             </h3>
           </div>

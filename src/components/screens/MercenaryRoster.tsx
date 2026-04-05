@@ -73,7 +73,7 @@ export function MercenaryRoster() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-amber-400 mb-1" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>⚔️ Mercenary Roster</h1>
+      <h1 className="text-2xl font-bold text-amber-400 mb-1 font-heading">⚔️ Mercenary Roster</h1>
       <p className="text-stone-400 text-sm mb-6">
         {mercenaries.length} guild members on the books.
       </p>
@@ -97,7 +97,7 @@ export function MercenaryRoster() {
           <div className="flex items-start gap-4 mb-4">
             <span className="text-5xl">{selectedLive.portrait}</span>
             <div>
-              <h2 className="text-xl font-bold text-stone-100" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>{selectedLive.name}</h2>
+              <h2 className="text-xl font-bold text-stone-100 font-heading">{selectedLive.name}</h2>
               <p className="text-stone-400 text-sm">{selectedLive.title}</p>
               <p className="text-stone-500 text-xs mt-0.5">{selectedLive.missionsCompleted} missions completed</p>
               {selectedLive.background && (

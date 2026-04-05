@@ -29,7 +29,7 @@ export function ItemCard({ item, count }: Props) {
         <span className="text-xl shrink-0">{CATEGORY_ICONS[item.category] ?? '📦'}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className={`font-semibold text-sm ${rs.text}`} style={{ fontFamily: "'Cinzel', Georgia, serif" }}>
+            <span className={`font-semibold font-heading text-sm ${rs.text}`}>
               {item.name}
             </span>
             {count && count > 1 && (
@@ -39,7 +39,7 @@ export function ItemCard({ item, count }: Props) {
           </div>
           <p className="text-xs text-stone-400 mt-0.5 leading-snug">{item.description}</p>
           {item.flavorText && (
-            <p className="text-xs text-stone-500 italic mt-0.5" style={{ fontFamily: "'Crimson Text', Georgia, serif" }}>
+            <p className="text-xs text-stone-500 italic mt-0.5 font-body-italic">
               &ldquo;{item.flavorText}&rdquo;
             </p>
           )}
