@@ -131,6 +131,8 @@ export function GuildScene() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const sceneRef = useRef<Scene | null>(null);
+  // These Maps are mutated by the rooms/mercs effects; the init effect captures
+  // the same Map reference so handlers always see the latest meshes/materials.
   const roomMeshesRef = useRef(new Map<string, AbstractMesh>());
   const roomMatsRef = useRef(new Map<string, StandardMaterial>());
   const pawnsRef = useRef(new Map<string, PawnData>());
@@ -138,13 +140,10 @@ export function GuildScene() {
 
   const { guild, mercenaries, setScreen } = useGameStore();
 
-  // Keep a stable ref to setScreen so Babylon click handlers are always current
-  const setScreenRef = useRef(setScreen);
-  useEffect(() => {
-    setScreenRef.current = setScreen;
-  }, [setScreen]);
-
-  // ── One-time scene initialisation ────────────────────────────────────────
+  // ── Infrastructure init: engine / scene / camera / lights / handlers ──────
+  // setScreen is a Zustand action with a stable identity, so this effect runs
+  // exactly once per mount (same as []).  We list it in deps so the linter and
+  // React Compiler are satisfied.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -208,62 +207,18 @@ export function GuildScene() {
     groundMat.specularColor = Color3.Black();
     ground.material = groundMat;
 
-    // Rooms
-    const rooms = roomMeshesRef.current;
+    // Capture the Maps by reference — rooms/mercs effects will populate them
     const mats = roomMatsRef.current;
     const pawns = pawnsRef.current;
-
-    for (const roomId of Object.keys(ROOM_CFG)) {
-      const cfg = ROOM_CFG[roomId];
-      const roomData = guild.rooms.find((r) => r.id === roomId);
-      const level = roomData?.level ?? 1;
-      const bHeight = 0.65 + level * 0.35;
-
-      // Building body
-      const bldg = MeshBuilder.CreateBox(
-        `bldg_${roomId}`,
-        { width: 2.3, height: 1, depth: 2.3 },
-        scene,
-      );
-      bldg.scaling.y = bHeight;
-      bldg.position = new Vector3(cfg.pos[0], bHeight / 2, cfg.pos[2]);
-      bldg.metadata = { type: 'room', roomId };
-
-      const mat = new StandardMaterial(`mat_${roomId}`, scene);
-      mat.diffuseColor = new Color3(...cfg.baseColor);
-      mat.specularColor = new Color3(0.08, 0.08, 0.08);
-      bldg.material = mat;
-      rooms.set(roomId, bldg);
-      mats.set(roomId, mat);
-
-      // Roof slab
-      const roof = MeshBuilder.CreateBox(
-        `roof_${roomId}`,
-        { width: 2.5, height: 0.11, depth: 2.5 },
-        scene,
-      );
-      roof.position = new Vector3(cfg.pos[0], bHeight + 0.055, cfg.pos[2]);
-      roof.metadata = { type: 'room', roomId };
-
-      const [r, g, b] = cfg.baseColor;
-      const roofMat = new StandardMaterial(`roofMat_${roomId}`, scene);
-      roofMat.diffuseColor = new Color3(r * 0.65, g * 0.65, b * 0.65);
-      roofMat.specularColor = Color3.Black();
-      roof.material = roofMat;
-    }
-
-    // Initial pawns
-    buildPawns(scene, mercenaries, pawns);
 
     // ── Per-frame animation ───────────────────────────────────────────────
     scene.onBeforeRenderObservable.add(() => {
       const dt = engine.getDeltaTime() / 1000;
       const t = performance.now() / 1000;
 
-      for (const [, pawn] of pawnsRef.current) {
+      for (const [, pawn] of pawns) {
         if (pawn.idleCountdown > 0) {
           pawn.idleCountdown -= dt;
-          // Gentle idle bob
           pawn.mesh.position.y = 0.24 + Math.sin(t * 2.2 + pawn.phase) * 0.018;
           continue;
         }
@@ -275,7 +230,6 @@ export function GuildScene() {
         const dist = Math.sqrt(dx * dx + dz * dz);
 
         if (dist < 0.06) {
-          // Arrived — pick a new target after a short idle
           pawn.idleCountdown = 1.5 + Math.random() * 2.5;
           const cfg = ROOM_CFG[pawn.homeRoomId];
           if (cfg) {
@@ -324,7 +278,7 @@ export function GuildScene() {
 
       if (info.type === PointerEventTypes.POINTERTAP && hitRoomId) {
         const cfg = ROOM_CFG[hitRoomId];
-        if (cfg) setScreenRef.current(cfg.screen);
+        if (cfg) setScreen(cfg.screen);
       }
     });
 
@@ -343,26 +297,59 @@ export function GuildScene() {
       engine.dispose();
       engineRef.current = null;
       sceneRef.current = null;
-      rooms.clear();
       mats.clear();
       pawns.clear();
       hoveredRoomRef.current = null;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setScreen]);
 
-  // ── Sync room visuals when room levels change ─────────────────────────────
+  // ── Create / update room buildings when guild.rooms changes ───────────────
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
     const roomMeshes = roomMeshesRef.current;
+    const roomMats = roomMatsRef.current;
 
     for (const room of guild.rooms) {
-      const bldg = roomMeshes.get(room.id);
-      if (!bldg) continue;
+      const cfg = ROOM_CFG[room.id];
+      if (!cfg) continue;
       const bHeight = 0.65 + room.level * 0.35;
+
+      let bldg = roomMeshes.get(room.id);
+      if (!bldg) {
+        // First time: create building body + roof
+        bldg = MeshBuilder.CreateBox(
+          `bldg_${room.id}`,
+          { width: 2.3, height: 1, depth: 2.3 },
+          scene,
+        );
+        bldg.position = new Vector3(cfg.pos[0], bHeight / 2, cfg.pos[2]);
+        bldg.metadata = { type: 'room', roomId: room.id };
+
+        const mat = new StandardMaterial(`mat_${room.id}`, scene);
+        mat.diffuseColor = new Color3(...cfg.baseColor);
+        mat.specularColor = new Color3(0.08, 0.08, 0.08);
+        bldg.material = mat;
+        roomMeshes.set(room.id, bldg);
+        roomMats.set(room.id, mat);
+
+        const roof = MeshBuilder.CreateBox(
+          `roof_${room.id}`,
+          { width: 2.5, height: 0.11, depth: 2.5 },
+          scene,
+        );
+        roof.position = new Vector3(cfg.pos[0], bHeight + 0.055, cfg.pos[2]);
+        roof.metadata = { type: 'room', roomId: room.id };
+        const [r, g, b] = cfg.baseColor;
+        const roofMat = new StandardMaterial(`roofMat_${room.id}`, scene);
+        roofMat.diffuseColor = new Color3(r * 0.65, g * 0.65, b * 0.65);
+        roofMat.specularColor = Color3.Black();
+        roof.material = roofMat;
+      }
+
+      // Always sync height (handles upgrades)
       bldg.scaling.y = bHeight;
       bldg.position.y = bHeight / 2;
-
       const roof = scene.getMeshByName(`roof_${room.id}`);
       if (roof) roof.position.y = bHeight + 0.055;
     }
@@ -389,3 +376,4 @@ export function GuildScene() {
     />
   );
 }
+
