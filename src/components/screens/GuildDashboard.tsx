@@ -1,4 +1,5 @@
 import { useGameStore, getGuildRankName, getNextRankThreshold } from '~/store/gameStore';
+import { GuildScene } from '~/babylon/GuildScene';
 
 const RANK_THRESHOLDS = [0, 5, 15, 30, 50];
 
@@ -30,7 +31,18 @@ export function GuildDashboard() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
+      {/* 3-D isometric diorama */}
+      <div className="relative bg-stone-950 border-b border-stone-800">
+        <GuildScene />
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-6 text-[11px] text-stone-400 pointer-events-none select-none">
+          <span>🛏️ Barracks → Roster</span>
+          <span>🍺 Common Room → Dashboard</span>
+          <span>🔨 Forge → Workshop</span>
+        </div>
+      </div>
+
+      <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-amber-400 mb-1 font-heading">
           🏰 {guild.name}
@@ -259,6 +271,7 @@ export function GuildDashboard() {
           Reset Save Data
         </button>
       </div>
+      </div> {/* end inner p-6 */}
     </div>
   );
 }
