@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Engine,
   Scene,
@@ -50,6 +50,28 @@ const ROOM_CFG: Record<string, RoomCfg> = {
     label: 'Forge',
   },
 };
+
+const HOVER_CARD_CLASS =
+  'absolute left-3 top-3 max-w-xs rounded-lg border border-stone-700 bg-stone-950/85 px-3 py-2 text-xs text-stone-300 shadow-lg backdrop-blur-sm pointer-events-none';
+
+const ROOM_EFFECT_LABELS: Record<string, Record<string, (val: number) => string>> = {
+  room_barracks: {
+    rosterCap: (val) => `Roster cap: ${val} mercenaries`,
+    recoveryBonus: (val) => (val > 0 ? `+${val} recovery speed` : 'Standard recovery'),
+  },
+  room_tavern: {
+    moraleBonus: (val) => (val > 0 ? `+${val} morale after missions` : 'Morale stable'),
+    eventChance: (val) => (val > 0 ? `+${val} event frequency` : 'Standard event rate'),
+  },
+  room_forge: {
+    lootBonus: (val) => (val > 0 ? `+${val} extra loot on success` : 'Standard loot'),
+    forgeLevel: (val) => `Forge level ${val}`,
+  },
+};
+
+function roomEffectLabel(roomId: string, key: string, val: number): string {
+  return ROOM_EFFECT_LABELS[roomId]?.[key]?.(val) ?? `${key}: ${val}`;
+}
 
 // ── Pawn state (stored in ref, not React state) ───────────────────────────────
 
@@ -137,8 +159,16 @@ export function GuildScene() {
   const roomMatsRef = useRef(new Map<string, StandardMaterial>());
   const pawnsRef = useRef(new Map<string, PawnData>());
   const hoveredRoomRef = useRef<string | null>(null);
+  const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
 
   const { guild, mercenaries, setScreen } = useGameStore();
+  const hoveredRoom = hoveredRoomId
+    ? guild.rooms.find((room) => room.id === hoveredRoomId)
+    : null;
+  const hoveredCfg = hoveredRoomId ? ROOM_CFG[hoveredRoomId] : null;
+  const hoveredLevel = hoveredRoom
+    ? hoveredRoom.levels[hoveredRoom.level - 1]
+    : null;
 
   // ── Infrastructure init: engine / scene / camera / lights / handlers ──────
   // setScreen is a Zustand action with a stable identity, so this effect runs
@@ -272,6 +302,7 @@ export function GuildScene() {
             if (m && cfg) m.emissiveColor = new Color3(...cfg.emissiveHover);
           }
           hoveredRoomRef.current = hitRoomId;
+          setHoveredRoomId(hitRoomId);
           canvas.style.cursor = hitRoomId ? 'pointer' : 'default';
         }
       }
@@ -370,10 +401,38 @@ export function GuildScene() {
   }, [mercenaries]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: '100%', height: '360px', display: 'block', touchAction: 'none' }}
-    />
+    <div className="relative">
+      <canvas
+        ref={canvasRef}
+        style={{ width: '100%', height: '360px', display: 'block', touchAction: 'none' }}
+      />
+      <div
+        role="status"
+        aria-live="polite"
+        className={HOVER_CARD_CLASS}
+      >
+        {hoveredRoom && hoveredCfg && hoveredLevel ? (
+          <>
+            <div className="text-sm font-semibold text-amber-300">
+              {hoveredRoom.icon} {hoveredRoom.name}
+            </div>
+            <div className="mt-0.5 text-stone-400">
+              Level {hoveredRoom.level}/{hoveredRoom.maxLevel} · click to open {hoveredCfg.label}
+            </div>
+            <div className="mt-2 text-stone-400">Active room effects</div>
+            <ul className="mt-0.5 space-y-0.5 text-emerald-400">
+              {Object.entries(hoveredLevel.effects).map(([key, val]) => (
+                <li key={key}>{roomEffectLabel(hoveredRoom.id, key, val)}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            <div className="text-sm font-semibold text-amber-300">Guildhall</div>
+            <div className="mt-0.5 text-stone-400">Hover a room for details, click to navigate.</div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
-
