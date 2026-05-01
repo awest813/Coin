@@ -25,6 +25,7 @@ interface ExtendedMissionResult {
   narrativeEvents: string[];
   goldEarned: number;
   renownEarned: number;
+  suppliesEarned?: number;
   itemsEarned: string[];
   injuredMercIds: string[];
   fatiguedMercIds: string[];
@@ -79,8 +80,8 @@ export function ResultsModal() {
           </div>
         )}
 
-        {/* Gold & Renown */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        {/* Gold, Renown & Supplies */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="bg-stone-800/80 rounded-lg p-3 text-center">
             <div className="text-amber-400 font-bold text-lg">+{result.goldEarned}g</div>
             <div className="text-stone-400 text-xs">Gold Earned</div>
@@ -89,6 +90,12 @@ export function ResultsModal() {
             <div className="text-yellow-400 font-bold text-lg">+{result.renownEarned}</div>
             <div className="text-stone-400 text-xs">Renown Gained</div>
           </div>
+          {(result.suppliesEarned ?? 0) > 0 && (
+            <div className="bg-stone-800/80 rounded-lg p-3 text-center">
+              <div className="text-green-400 font-bold text-lg">+{result.suppliesEarned}</div>
+              <div className="text-stone-400 text-xs">Supplies</div>
+            </div>
+          )}
         </div>
 
         {/* Materials */}

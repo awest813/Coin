@@ -247,6 +247,34 @@ function computeMaterialDrops(
   return drops;
 }
 
+/** Compute updated guild rank and unlocked regions from completed contracts and renown */
+function computeProgression(
+  completedContracts: number,
+  renown: number,
+  currentRegions: string[]
+): { guildRank: number; unlockedRegions: string[] } {
+  let guildRank = 1;
+  for (let i = RANK_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (completedContracts >= RANK_THRESHOLDS[i]) {
+      guildRank = i + 1;
+      break;
+    }
+  }
+
+  const unlockedRegions = [...currentRegions];
+  if (completedContracts >= 5 && !unlockedRegions.includes('Grey Mountains')) {
+    unlockedRegions.push('Grey Mountains');
+  }
+  if (renown >= 50 && !unlockedRegions.includes('City Below')) {
+    unlockedRegions.push('City Below');
+  }
+  if (guildRank >= 3 && !unlockedRegions.includes('Pale Border')) {
+    unlockedRegions.push('Pale Border');
+  }
+
+  return { guildRank, unlockedRegions };
+}
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
@@ -258,14 +286,16 @@ export const useGameStore = create<GameState>()(
 
       applyMissionResult: (result) =>
         set((state) => {
-          const template = Object.values(state.items); // not used, use result directly
-          void template;
+          // Supplies earned: mercs return with scavenged goods
+          const suppliesEarned =
+            result.outcome === 'success' ? 5 : result.outcome === 'partial' ? 2 : 0;
 
           // Update guild resources
           const resources = {
             ...state.guild.resources,
             gold: state.guild.resources.gold + result.goldEarned,
             renown: state.guild.resources.renown + result.renownEarned,
+            supplies: state.guild.resources.supplies + suppliesEarned,
           };
 
           // Update inventory
@@ -303,8 +333,11 @@ export const useGameStore = create<GameState>()(
           const updatedMercenariesWithBonds = applyBondChanges(state.mercenaries, bondChanges);
 
           // Update mercs (injury, fatigue, morale, missions completed)
+          // Mercs not on this mission rested and recover from fatigue.
           const mercenaries = updatedMercenariesWithBonds.map((m) => {
-            if (!result.mercIds.includes(m.id)) return m;
+            if (!result.mercIds.includes(m.id)) {
+              return { ...m, isFatigued: false };
+            }
             const injured = result.injuredMercIds.includes(m.id);
             const fatigued = result.fatiguedMercIds.includes(m.id);
             const moraleDelta =
@@ -336,16 +369,29 @@ export const useGameStore = create<GameState>()(
             ...newEvents,
           ].slice(0, 10); // cap at 10
 
+          const { guildRank, unlockedRegions } = computeProgression(
+            completedContracts,
+            resources.renown,
+            state.guild.unlockedRegions
+          );
+
           const newGuild: Guild = {
             ...state.guild,
             resources,
             inventoryItemIds,
             materials,
             completedContracts,
+            guildRank,
+            unlockedRegions,
           };
 
           // Store bond changes on result for display
-          const enrichedResult = { ...result, bondChanges, materialsDropped: matDrops };
+          const enrichedResult = {
+            ...result,
+            bondChanges,
+            materialsDropped: matDrops,
+            suppliesEarned,
+          };
 
           return {
             guild: newGuild,
@@ -686,11 +732,20 @@ export const useGameStore = create<GameState>()(
             // Finalize expedition
             const expResult = finalizeExpedition(mercs, template, ae, seed);
 
+            // Supplies earned from expedition (more than a standard mission)
+            const suppliesEarned =
+              expResult.totalOutcome === 'success'
+                ? 10
+                : expResult.totalOutcome === 'partial'
+                ? 5
+                : 0;
+
             // Apply results
             const resources = {
               ...state.guild.resources,
               gold: state.guild.resources.gold + expResult.goldEarned,
               renown: state.guild.resources.renown + expResult.renownEarned,
+              supplies: state.guild.resources.supplies + suppliesEarned,
             };
 
             const inventoryItemIds = [
@@ -705,10 +760,18 @@ export const useGameStore = create<GameState>()(
 
             const completedContracts = state.guild.completedContracts + 1;
 
-            // Apply bond changes
+            const { guildRank, unlockedRegions } = computeProgression(
+              completedContracts,
+              resources.renown,
+              state.guild.unlockedRegions
+            );
+
+            // Apply bond changes; resting mercs recover fatigue
             const updatedMercs = applyBondChanges(state.mercenaries, expResult.bondChanges).map(
               (m) => {
-                if (!ae.assignedMercIds.includes(m.id)) return m;
+                if (!ae.assignedMercIds.includes(m.id)) {
+                  return { ...m, isFatigued: false };
+                }
                 const injured = expResult.injuredMercIds.includes(m.id);
                 const fatigued = expResult.fatiguedMercIds.includes(m.id);
                 return { ...m, isInjured: injured, isFatigued: fatigued };
@@ -726,6 +789,8 @@ export const useGameStore = create<GameState>()(
                 inventoryItemIds,
                 materials,
                 completedContracts,
+                guildRank,
+                unlockedRegions,
               },
             };
           } else {
