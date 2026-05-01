@@ -51,6 +51,9 @@ const ROOM_CFG: Record<string, RoomCfg> = {
   },
 };
 
+const HOVER_CARD_CLASS =
+  'absolute left-3 top-3 max-w-xs rounded-lg border border-stone-700 bg-stone-950/85 px-3 py-2 text-xs text-stone-300 shadow-lg backdrop-blur-sm pointer-events-none';
+
 const ROOM_EFFECT_LABELS: Record<string, Record<string, (val: number) => string>> = {
   room_barracks: {
     rosterCap: (val) => `Roster cap: ${val} mercenaries`,
@@ -405,8 +408,8 @@ export function GuildScene() {
       />
       <div
         role="status"
-        aria-live="polite"
-        className="absolute left-3 top-3 max-w-xs rounded-lg border border-stone-700 bg-stone-950/85 px-3 py-2 text-xs text-stone-300 shadow-lg backdrop-blur-sm pointer-events-none"
+        aria-live={hoveredRoom ? 'polite' : 'off'}
+        className={HOVER_CARD_CLASS}
       >
         {hoveredRoom && hoveredCfg && hoveredLevel ? (
           <>
@@ -416,7 +419,8 @@ export function GuildScene() {
             <div className="mt-0.5 text-stone-400">
               Level {hoveredRoom.level}/{hoveredRoom.maxLevel} · click to open {hoveredCfg.label}
             </div>
-            <ul className="mt-2 space-y-0.5 text-emerald-400">
+            <div className="mt-2 text-stone-400">Active room effects</div>
+            <ul className="mt-0.5 space-y-0.5 text-emerald-400" aria-label="Active room effects">
               {Object.entries(hoveredLevel.effects).map(([key, val]) => (
                 <li key={key}>{roomEffectLabel(hoveredRoom.id, key, val)}</li>
               ))}
