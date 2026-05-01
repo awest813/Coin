@@ -42,6 +42,8 @@ export interface MissionTemplate {
 }
 
 export interface ActiveMission {
+  /** Unique run ID so the same template can be active more than once */
+  missionRunId: string;
   templateId: string;
   assignedMercIds: string[];
   /** ISO timestamp when mission was sent */
@@ -51,6 +53,8 @@ export interface ActiveMission {
 }
 
 export interface MissionResult {
+  /** Matches the ActiveMission that produced this result */
+  missionRunId: string;
   templateId: string;
   mercIds: string[];
   outcome: MissionOutcome;

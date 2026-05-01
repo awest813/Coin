@@ -3,6 +3,7 @@ import { useGameStore } from '~/store/gameStore';
 import { ITEMS_MAP } from '~/data/items';
 import { MATERIALS_MAP } from '~/data/materials';
 import { bondScoreToSentiment } from '~/simulation/bondSim';
+import { MISSION_TEMPLATES } from '~/data/missions';
 
 const OUTCOME_STYLE = {
   success: { label: '✅ Success!', color: 'text-green-400', bg: 'bg-green-900/30', border: 'border-green-700' },
@@ -19,6 +20,7 @@ const RARITY_COLORS: Record<string, string> = {
 
 // Extended result type with Phase 2 fields
 interface ExtendedMissionResult {
+  templateId: string;
   outcome: 'success' | 'partial' | 'failure';
   partyScore: number;
   difficulty: number;
@@ -55,11 +57,17 @@ export function ResultsModal() {
   const materialsEarned = result.materialsEarned ?? {};
   const hasMaterials = Object.values(materialsEarned).some((q) => q > 0);
 
+  // Find mission name from template ID
+  const missionName = MISSION_TEMPLATES.find((t) => t.id === result.templateId)?.name;
+
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className={`rounded-xl border ${style.border} ${style.bg} backdrop-blur max-w-lg w-full p-6 my-4 shadow-2xl`}>
         {/* Header */}
         <div className="text-center mb-4">
+          {missionName && (
+            <p className="text-stone-400 text-xs mb-1 uppercase tracking-wider">{missionName}</p>
+          )}
           <h2 className={`text-2xl font-bold font-heading ${style.color}`}>{style.label}</h2>
           <p className="text-stone-400 text-sm mt-1">
             Party score <span className="text-stone-200 font-medium">{result.partyScore}</span> vs difficulty <span className="text-stone-200 font-medium">{result.difficulty}</span>
