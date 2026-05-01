@@ -51,20 +51,23 @@ const ROOM_CFG: Record<string, RoomCfg> = {
   },
 };
 
+const ROOM_EFFECT_LABELS: Record<string, Record<string, (val: number) => string>> = {
+  room_barracks: {
+    rosterCap: (val) => `Roster cap: ${val} mercs`,
+    recoveryBonus: (val) => (val > 0 ? `+${val} recovery speed` : 'Standard recovery'),
+  },
+  room_tavern: {
+    moraleBonus: (val) => (val > 0 ? `+${val} morale after missions` : 'Morale stable'),
+    eventChance: (val) => (val > 0 ? `+${val} event frequency` : 'Standard event rate'),
+  },
+  room_forge: {
+    lootBonus: (val) => (val > 0 ? `+${val} extra loot on success` : 'Standard loot'),
+    forgeLevel: (val) => `Forge level ${val}`,
+  },
+};
+
 function roomEffectLabel(roomId: string, key: string, val: number): string {
-  if (roomId === 'room_barracks') {
-    if (key === 'rosterCap') return `Roster cap: ${val} mercs`;
-    if (key === 'recoveryBonus') return val > 0 ? `+${val} recovery speed` : 'Standard recovery';
-  }
-  if (roomId === 'room_tavern') {
-    if (key === 'moraleBonus') return val > 0 ? `+${val} morale after missions` : 'Morale stable';
-    if (key === 'eventChance') return val > 0 ? `+${val} event frequency` : 'Standard event rate';
-  }
-  if (roomId === 'room_forge') {
-    if (key === 'lootBonus') return val > 0 ? `+${val} extra loot on success` : 'Standard loot';
-    if (key === 'forgeLevel') return `Forge level ${val}`;
-  }
-  return `${key}: ${val}`;
+  return ROOM_EFFECT_LABELS[roomId]?.[key]?.(val) ?? `${key}: ${val}`;
 }
 
 // ── Pawn state (stored in ref, not React state) ───────────────────────────────
@@ -400,7 +403,11 @@ export function GuildScene() {
         ref={canvasRef}
         style={{ width: '100%', height: '360px', display: 'block', touchAction: 'none' }}
       />
-      <div className="absolute left-3 top-3 max-w-xs rounded-lg border border-stone-700 bg-stone-950/85 px-3 py-2 text-xs text-stone-300 shadow-lg backdrop-blur-sm pointer-events-none">
+      <div
+        role="status"
+        aria-live="polite"
+        className="absolute left-3 top-3 max-w-xs rounded-lg border border-stone-700 bg-stone-950/85 px-3 py-2 text-xs text-stone-300 shadow-lg backdrop-blur-sm pointer-events-none"
+      >
         {hoveredRoom && hoveredCfg && hoveredLevel ? (
           <>
             <div className="text-sm font-semibold text-amber-300">
