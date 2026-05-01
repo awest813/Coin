@@ -408,7 +408,7 @@ export function GuildScene() {
       />
       <div
         role="status"
-        aria-live={hoveredRoom ? 'polite' : 'off'}
+        aria-live="polite"
         className={HOVER_CARD_CLASS}
       >
         {hoveredRoom && hoveredCfg && hoveredLevel ? (
@@ -420,7 +420,7 @@ export function GuildScene() {
               Level {hoveredRoom.level}/{hoveredRoom.maxLevel} · click to open {hoveredCfg.label}
             </div>
             <div className="mt-2 text-stone-400">Active room effects</div>
-            <ul className="mt-0.5 space-y-0.5 text-emerald-400" aria-label="Active room effects">
+            <ul className="mt-0.5 space-y-0.5 text-emerald-400">
               {Object.entries(hoveredLevel.effects).map(([key, val]) => (
                 <li key={key}>{roomEffectLabel(hoveredRoom.id, key, val)}</li>
               ))}
