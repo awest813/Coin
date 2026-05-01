@@ -7,7 +7,7 @@ export function GuildDashboard() {
   const {
     guild,
     mercenaries,
-    activeMission,
+    activeMissions,
     resetSave,
     setScreen,
     upgradeRoom,
@@ -177,12 +177,16 @@ export function GuildDashboard() {
 
         <div className="bg-stone-800 rounded-lg border border-stone-700 p-4">
           <h3 className="text-stone-200 font-semibold mb-2">Active Contracts</h3>
-          {activeMission ? (
-            <div className="text-sm text-stone-400">
-              <div className="text-stone-200">Mission in progress...</div>
-              <div className="text-xs text-stone-500 mt-1">
-                {activeMission.assignedMercIds.length} merc{activeMission.assignedMercIds.length !== 1 ? 's' : ''} deployed
-              </div>
+          {activeMissions.length > 0 ? (
+            <div className="text-sm text-stone-400 space-y-1">
+              {activeMissions.map((am) => (
+                <div key={am.missionRunId} className="text-stone-300">
+                  ⚔️ {am.assignedMercIds.length} merc{am.assignedMercIds.length !== 1 ? 's' : ''} deployed
+                  <span className="text-xs text-stone-500 ml-1">
+                    since {new Date(am.startedAt).toLocaleTimeString()}
+                  </span>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-stone-500 text-sm italic">No active missions.</div>
@@ -191,7 +195,7 @@ export function GuildDashboard() {
             onClick={() => setScreen('missions')}
             className="mt-3 text-xs text-amber-400 hover:text-amber-300 underline"
           >
-            {activeMission ? 'Check Status →' : 'View Mission Board →'}
+            {activeMissions.length > 0 ? 'Resolve Missions →' : 'View Mission Board →'}
           </button>
         </div>
       </div>

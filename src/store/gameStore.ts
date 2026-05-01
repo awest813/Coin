@@ -47,19 +47,19 @@ export function getNextRankThreshold(rank: number): number {
   return RANK_THRESHOLDS[Math.min(rank, RANK_THRESHOLDS.length - 1)] ?? 50;
 }
 
-// Material drop mapping for mission tags
-const TAG_MATERIAL_MAP: Record<string, string[]> = {
-  combat: ['iron_scraps', 'tanned_hide'],
-  exploration: ['herbs_bundle', 'ancient_ink'],
-  ruin: ['bone_fragment', 'ancient_ink'],
-  hunt: ['wolf_pelt', 'bone_fragment'],
-};
+/** Max concurrent missions allowed based on guild rank */
+export function maxConcurrentMissions(guildRank: number): number {
+  if (guildRank >= 4) return 3;
+  if (guildRank >= 2) return 2;
+  return 1;
+}
 
 interface GameState {
   guild: Guild;
   mercenaries: Mercenary[];
   items: Record<string, Item>;
-  activeMission: ActiveMission | null;
+  /** All currently active missions (multiple allowed based on guild rank) */
+  activeMissions: ActiveMission[];
   lastResult: MissionResult | null;
   activeScreen: ActiveScreen;
   showResultModal: boolean;
@@ -79,7 +79,7 @@ interface GameState {
   // navigation
   setScreen: (screen: ActiveScreen) => void;
   // mission
-  setActiveMission: (mission: ActiveMission | null) => void;
+  addActiveMission: (mission: ActiveMission) => void;
   applyMissionResult: (result: MissionResult) => void;
   dismissResult: () => void;
   // merc management
@@ -200,7 +200,7 @@ const defaultState = () => ({
   guild: defaultGuild(),
   mercenaries: INITIAL_MERCENARIES,
   items: ITEMS_MAP,
-  activeMission: null,
+  activeMissions: [] as ActiveMission[],
   lastResult: null,
   activeScreen: 'dashboard' as ActiveScreen,
   showResultModal: false,
@@ -211,41 +211,6 @@ const defaultState = () => ({
   lastExpeditionResult: null,
   showExpeditionResult: false,
 });
-
-/** Compute material drops from a mission based on its tags */
-function computeMaterialDrops(
-  templateTags: string[],
-  outcome: string,
-  seed: string
-): Record<string, number> {
-  if (outcome === 'failure') return {};
-
-  const drops: Record<string, number> = {};
-  let dropCount = 0;
-
-  for (const tag of templateTags) {
-    const matPool = TAG_MATERIAL_MAP[tag];
-    if (!matPool) continue;
-    const r = Math.abs(
-      (() => {
-        let h = 2166136261;
-        const s = seed + tag;
-        for (let i = 0; i < s.length; i++) {
-          h ^= s.charCodeAt(i);
-          h = Math.imul(h, 16777619);
-        }
-        return (h >>> 0) / 0xffffffff;
-      })()
-    );
-    if (r < (outcome === 'success' ? 0.4 : 0.2) && dropCount < 2) {
-      const matId = matPool[Math.floor(r * matPool.length)];
-      drops[matId] = (drops[matId] ?? 0) + 1;
-      dropCount++;
-    }
-  }
-
-  return drops;
-}
 
 /** Compute updated guild rank and unlocked regions from completed contracts and renown */
 function computeProgression(
@@ -282,7 +247,8 @@ export const useGameStore = create<GameState>()(
 
       setScreen: (screen) => set({ activeScreen: screen }),
 
-      setActiveMission: (mission) => set({ activeMission: mission }),
+      addActiveMission: (mission) =>
+        set((state) => ({ activeMissions: [...state.activeMissions, mission] })),
 
       applyMissionResult: (result) =>
         set((state) => {
@@ -304,18 +270,8 @@ export const useGameStore = create<GameState>()(
             ...result.itemsEarned,
           ];
 
-          // Material drops from mission tags (need template tags)
-          // We pass result.templateId to find mission — use a simpler seed approach
-          const matDrops = computeMaterialDrops(
-            [], // tags not available here; handled in MissionBoard resolve
-            result.outcome,
-            result.templateId + result.mercIds.join('')
-          );
+          // Material drops: use those passed in the result (computed in MissionBoard)
           const materials = { ...state.guild.materials };
-          for (const [matId, qty] of Object.entries(matDrops)) {
-            materials[matId] = (materials[matId] ?? 0) + qty;
-          }
-          // Also add any materials passed in the result
           if ((result as MissionResult & { materialsEarned?: Record<string, number> }).materialsEarned) {
             const extra = (result as MissionResult & { materialsEarned?: Record<string, number> }).materialsEarned!;
             for (const [matId, qty] of Object.entries(extra)) {
@@ -332,22 +288,55 @@ export const useGameStore = create<GameState>()(
           );
           const updatedMercenariesWithBonds = applyBondChanges(state.mercenaries, bondChanges);
 
-          // Update mercs (injury, fatigue, morale, missions completed)
-          // Mercs not on this mission rested and recover from fatigue.
+          // Resolve room effects
+          const barracksRoom = state.guild.rooms.find((r) => r.id === 'room_barracks');
+          const recoveryBonus = barracksRoom?.levels[barracksRoom.level - 1]?.effects?.recoveryBonus ?? 0;
+          const tavernRoom = state.guild.rooms.find((r) => r.id === 'room_tavern');
+          const moraleBonus = tavernRoom?.levels[tavernRoom.level - 1]?.effects?.moraleBonus ?? 0;
+
+          // Set of mercs deployed on ANY OTHER active mission (not this one)
+          const deployedOnOtherMissions = new Set(
+            state.activeMissions
+              .filter((am) => am.missionRunId !== result.missionRunId)
+              .flatMap((am) => am.assignedMercIds)
+          );
+
+          // Update mercs: apply mission result to deployed mercs; apply rest effects to idle mercs
           const mercenaries = updatedMercenariesWithBonds.map((m) => {
-            if (!result.mercIds.includes(m.id)) {
-              return { ...m, isFatigued: false };
+            if (result.mercIds.includes(m.id)) {
+              // Returning mission mercs
+              const injured = result.injuredMercIds.includes(m.id);
+              const fatigued = result.fatiguedMercIds.includes(m.id);
+              const moraleDelta =
+                result.outcome === 'success' ? 1 : result.outcome === 'failure' ? -1 : 0;
+              return {
+                ...m,
+                missionsCompleted: m.missionsCompleted + 1,
+                isInjured: injured,
+                isFatigued: fatigued,
+                morale: Math.max(0, Math.min(10, m.morale + moraleDelta)),
+              };
             }
-            const injured = result.injuredMercIds.includes(m.id);
-            const fatigued = result.fatiguedMercIds.includes(m.id);
-            const moraleDelta =
-              result.outcome === 'success' ? 1 : result.outcome === 'failure' ? -1 : 0;
+            if (deployedOnOtherMissions.has(m.id)) {
+              // Merc is on another mission — no rest effects yet
+              return m;
+            }
+            // Resting mercs: recover fatigue, chance to recover injury, gain morale from tavern
+            // Use seeded random based on merc ID + mission run for reproducibility
+            const baseRecoveryChance = 0.4 + recoveryBonus * 0.25;
+            const recoverySeed = m.id + result.missionRunId;
+            let rh = 2166136261;
+            for (let i = 0; i < recoverySeed.length; i++) {
+              rh ^= recoverySeed.charCodeAt(i);
+              rh = Math.imul(rh, 16777619);
+            }
+            const recoveryRoll = (rh >>> 0) / 0xffffffff;
+            const recoversInjury = m.isInjured && recoveryRoll < baseRecoveryChance;
             return {
               ...m,
-              missionsCompleted: m.missionsCompleted + 1,
-              isInjured: injured,
-              isFatigued: fatigued,
-              morale: Math.max(0, Math.min(10, m.morale + moraleDelta)),
+              isFatigued: false,
+              isInjured: recoversInjury ? false : m.isInjured,
+              morale: Math.max(0, Math.min(10, m.morale + moraleBonus)),
             };
           });
 
@@ -389,14 +378,16 @@ export const useGameStore = create<GameState>()(
           const enrichedResult = {
             ...result,
             bondChanges,
-            materialsDropped: matDrops,
             suppliesEarned,
           };
 
           return {
             guild: newGuild,
             mercenaries,
-            activeMission: null,
+            // Remove the resolved mission from the active list
+            activeMissions: state.activeMissions.filter(
+              (am) => am.missionRunId !== result.missionRunId
+            ),
             lastResult: enrichedResult as MissionResult,
             showResultModal: true,
             pendingEvents,
@@ -558,16 +549,17 @@ export const useGameStore = create<GameState>()(
         }),
 
       generateRecruits: () =>
-        set(() => {
+        set((state) => {
+          if (state.guild.resources.gold < 25) return {};
           const seed = Date.now().toString();
           return {
             availableRecruits: generateRecruitBatch(4, seed),
             lastRecruitRefresh: new Date().toISOString(),
             guild: {
-              ...get().guild,
+              ...state.guild,
               resources: {
-                ...get().guild.resources,
-                gold: get().guild.resources.gold - 25,
+                ...state.guild.resources,
+                gold: state.guild.resources.gold - 25,
               },
             },
           };
@@ -880,6 +872,22 @@ export const useGameStore = create<GameState>()(
           state.activeExpedition = state.activeExpedition ?? null;
           state.lastExpeditionResult = state.lastExpeditionResult ?? null;
           state.showExpeditionResult = state.showExpeditionResult ?? false;
+        }
+        if (version < 4) {
+          // Migrate activeMission (single) → activeMissions (array)
+          const oldMission = state.activeMission as (Record<string, unknown> | null | undefined);
+          if (oldMission) {
+            const startedAt = (oldMission.startedAt as string) ?? '';
+            state.activeMissions = [{
+              ...oldMission,
+              missionRunId: startedAt
+                ? `${new Date(startedAt).getTime()}-migrated`
+                : `${Date.now()}-migrated`,
+            }];
+          } else {
+            state.activeMissions = [];
+          }
+          delete state.activeMission;
         }
         return state;
       },
