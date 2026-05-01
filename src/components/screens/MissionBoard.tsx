@@ -18,6 +18,10 @@ const TAG_MATERIAL_HINTS: Record<string, string> = {
 
 type AssignStep = 'mercs' | 'consumables';
 
+function pluralize(count: number, singular: string, plural: string): string {
+  return count === 1 ? `${count} ${singular}` : `${count} ${plural}`;
+}
+
 export function MissionBoard() {
   const { mercenaries, activeMissions, addActiveMission, applyMissionResult, guild, items } =
     useGameStore();
@@ -250,7 +254,7 @@ export function MissionBoard() {
                 Select mercenaries. More mercs = higher party score. Relationships matter.
                 {deployedMercIds.size > 0 && (
                   <span className="ml-1 text-amber-700">
-                    ({deployedMercIds.size} merc{deployedMercIds.size !== 1 ? 's' : ''} already deployed)
+                    ({pluralize(deployedMercIds.size, 'merc', 'mercs')} already deployed)
                   </span>
                 )}
               </p>
@@ -328,7 +332,12 @@ export function MissionBoard() {
                   disabled={selectedMercIds.length === 0}
                   className="flex-1 py-2 rounded bg-amber-700 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors"
                 >
-                  ⚔️ Send Party ({selectedMercIds.length} merc{selectedMercIds.length !== 1 ? 's' : ''}{selectedConsumables.length > 0 ? `, ${selectedConsumables.length} consumable${selectedConsumables.length !== 1 ? 's' : ''}` : ''})
+                  ⚔️ Send Party ({[
+                    pluralize(selectedMercIds.length, 'merc', 'mercs'),
+                    selectedConsumables.length > 0
+                      ? pluralize(selectedConsumables.length, 'consumable', 'consumables')
+                      : null,
+                  ].filter(Boolean).join(', ')})
                 </button>
                 <button
                   onClick={() => setAssignStep('mercs')}

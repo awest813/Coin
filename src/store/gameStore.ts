@@ -322,8 +322,16 @@ export const useGameStore = create<GameState>()(
               return m;
             }
             // Resting mercs: recover fatigue, chance to recover injury, gain morale from tavern
+            // Use seeded random based on merc ID + mission run for reproducibility
             const baseRecoveryChance = 0.4 + recoveryBonus * 0.25;
-            const recoversInjury = m.isInjured && Math.random() < baseRecoveryChance;
+            const recoverySeed = m.id + result.missionRunId;
+            let rh = 2166136261;
+            for (let i = 0; i < recoverySeed.length; i++) {
+              rh ^= recoverySeed.charCodeAt(i);
+              rh = Math.imul(rh, 16777619);
+            }
+            const recoveryRoll = (rh >>> 0) / 0xffffffff;
+            const recoversInjury = m.isInjured && recoveryRoll < baseRecoveryChance;
             return {
               ...m,
               isFatigued: false,
@@ -869,9 +877,12 @@ export const useGameStore = create<GameState>()(
           // Migrate activeMission (single) → activeMissions (array)
           const oldMission = state.activeMission as (Record<string, unknown> | null | undefined);
           if (oldMission) {
+            const startedAt = (oldMission.startedAt as string) ?? '';
             state.activeMissions = [{
               ...oldMission,
-              missionRunId: (oldMission.startedAt as string) ?? Date.now().toString(),
+              missionRunId: startedAt
+                ? `${new Date(startedAt).getTime()}-migrated`
+                : `${Date.now()}-migrated`,
             }];
           } else {
             state.activeMissions = [];
