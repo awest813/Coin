@@ -53,7 +53,7 @@ const ROOM_CFG: Record<string, RoomCfg> = {
 
 const ROOM_EFFECT_LABELS: Record<string, Record<string, (val: number) => string>> = {
   room_barracks: {
-    rosterCap: (val) => `Roster cap: ${val} mercs`,
+    rosterCap: (val) => `Roster cap: ${val} mercenaries`,
     recoveryBonus: (val) => (val > 0 ? `+${val} recovery speed` : 'Standard recovery'),
   },
   room_tavern: {
@@ -416,11 +416,11 @@ export function GuildScene() {
             <div className="mt-0.5 text-stone-400">
               Level {hoveredRoom.level}/{hoveredRoom.maxLevel} · click to open {hoveredCfg.label}
             </div>
-            <div className="mt-2 space-y-0.5 text-emerald-400">
+            <ul className="mt-2 space-y-0.5 text-emerald-400">
               {Object.entries(hoveredLevel.effects).map(([key, val]) => (
-                <div key={key}>{roomEffectLabel(hoveredRoom.id, key, val)}</div>
+                <li key={key}>{roomEffectLabel(hoveredRoom.id, key, val)}</li>
               ))}
-            </div>
+            </ul>
           </>
         ) : (
           <>
