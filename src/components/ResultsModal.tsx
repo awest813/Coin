@@ -42,6 +42,7 @@ interface ExtendedMissionResult {
   }>;
   bondChanges?: Array<{ mercId1: string; mercId2: string; delta: number }>;
   materialsEarned?: Record<string, number>;
+  synergies?: Array<{ name: string; scoreBonus: number; description: string }>;
 }
 
 export function ResultsModal() {
@@ -55,206 +56,203 @@ export function ResultsModal() {
 
   const bondChanges = result.bondChanges ?? [];
   const materialsEarned = result.materialsEarned ?? {};
+  const synergies = result.synergies ?? [];
   const hasMaterials = Object.values(materialsEarned).some((q) => q > 0);
 
   // Find mission name from template ID
   const missionName = MISSION_TEMPLATES.find((t) => t.id === result.templateId)?.name;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className={`rounded-xl border ${style.border} ${style.bg} backdrop-blur max-w-lg w-full p-6 my-4 shadow-2xl`}>
-        {/* Header */}
-        <div className="text-center mb-4">
-          {missionName && (
-            <p className="text-stone-400 text-xs mb-1 uppercase tracking-wider">{missionName}</p>
-          )}
-          <h2 className={`text-2xl font-bold font-heading ${style.color}`}>{style.label}</h2>
-          <p className="text-stone-400 text-sm mt-1">
-            Party score <span className="text-stone-200 font-medium">{result.partyScore}</span> vs difficulty <span className="text-stone-200 font-medium">{result.difficulty}</span>
-          </p>
-        </div>
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-stone-950/90 backdrop-blur-xl animate-in fade-in duration-500 overflow-y-auto">
+      <div className={`glass-dark rounded-[2.5rem] max-w-2xl w-full shadow-2xl border ${style.border} relative overflow-hidden my-auto`}>
+        {/* Decorative background flair */}
+        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 opacity-20 blur-[60px] -translate-y-1/2 ${style.bg}`} />
+        
+        <header className="p-10 text-center relative z-10 border-b border-white/5 bg-white/5">
+           <p className="text-stone-500 text-[10px] uppercase tracking-[0.4em] font-black mb-2">{missionName || 'Expedition Report'}</p>
+           <h2 className={`text-4xl font-bold font-heading tracking-tight ${style.color}`}>{style.label}</h2>
+           <div className="mt-4 inline-flex items-center gap-4 text-[10px] font-mono text-stone-500 uppercase tracking-widest bg-black/40 px-4 py-2 rounded-full border border-white/5">
+              <span>Score <span className="text-white">{result.partyScore}</span></span>
+              <span className="opacity-30">|</span>
+              <span>Difficulty <span className="text-white">{result.difficulty}</span></span>
+           </div>
+        </header>
 
-        {/* Narrative events */}
-        {result.narrativeEvents.length > 0 && (
-          <div className="mb-4 space-y-2">
-            {result.narrativeEvents.map((text, i) => (
-              <p
-                key={i}
-                className={`text-sm italic leading-relaxed ${i === 0 ? 'text-stone-200' : 'text-stone-400'}`}
-              >
-                &ldquo;{text}&rdquo;
-              </p>
-            ))}
-          </div>
-        )}
+        <div className="p-10 space-y-10">
+          {/* Narrative Section */}
+          <section className="space-y-4">
+             {result.narrativeEvents.map((text, i) => (
+               <p key={i} className={`text-lg leading-relaxed italic font-serif ${i === 0 ? 'text-stone-100' : 'text-stone-400 opacity-60 text-sm'}`}>
+                 "{text}"
+               </p>
+             ))}
+          </section>
 
-        {/* Gold, Renown & Supplies */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-stone-800/80 rounded-lg p-3 text-center">
-            <div className="text-amber-400 font-bold text-lg">+{result.goldEarned}g</div>
-            <div className="text-stone-400 text-xs">Gold Earned</div>
-          </div>
-          <div className="bg-stone-800/80 rounded-lg p-3 text-center">
-            <div className="text-yellow-400 font-bold text-lg">+{result.renownEarned}</div>
-            <div className="text-stone-400 text-xs">Renown Gained</div>
-          </div>
-          {(result.suppliesEarned ?? 0) > 0 && (
-            <div className="bg-stone-800/80 rounded-lg p-3 text-center">
-              <div className="text-green-400 font-bold text-lg">+{result.suppliesEarned}</div>
-              <div className="text-stone-400 text-xs">Supplies</div>
-            </div>
-          )}
-        </div>
-
-        {/* Materials */}
-        {hasMaterials && (
-          <div className="mb-4">
-            <h4 className="text-stone-300 text-sm font-medium mb-2">📦 Materials Found</h4>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(materialsEarned)
-                .filter(([, qty]) => qty > 0)
-                .map(([matId, qty]) => {
-                  const mat = MATERIALS_MAP[matId];
-                  return mat ? (
-                    <span key={matId} className="text-xs bg-stone-800 px-2 py-1 rounded border border-stone-700 text-stone-300">
-                      {mat.icon} {mat.name} x{qty}
-                    </span>
-                  ) : null;
-                })}
-            </div>
-          </div>
-        )}
-
-        {/* Loot */}
-        {result.itemsEarned.length > 0 && (
-          <div className="mb-4">
-            <h4 className="text-stone-300 text-sm font-medium mb-2">⚗️ Loot Found</h4>
-            <div className="flex flex-wrap gap-2">
-              {result.itemsEarned.map((id, i) => {
-                const item = ITEMS_MAP[id];
-                return item ? (
-                  <span
-                    key={i}
-                    className={`text-xs bg-stone-800 px-2 py-1 rounded border border-stone-700 ${RARITY_COLORS[item.rarity]}`}
-                    title={item.description}
-                  >
-                    {item.name}
-                  </span>
-                ) : null;
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Bond changes */}
-        {bondChanges.length > 0 && (
-          <div className="mb-4">
-            <h4 className="text-stone-300 text-sm font-medium mb-2">💞 Bond Changes</h4>
-            <div className="space-y-1">
-              {bondChanges.map((bc, i) => {
-                const m1 = mercenaries.find((m) => m.id === bc.mercId1);
-                const m2 = mercenaries.find((m) => m.id === bc.mercId2);
-                if (!m1 || !m2) return null;
-                const newScore1 = (m1.bondScores?.[bc.mercId2] ?? 0);
-                const sentiment = bondScoreToSentiment(newScore1);
-                return (
-                  <div key={i} className="text-xs text-stone-400">
-                    {m1.name} & {m2.name}:{' '}
-                    <span className={bc.delta > 0 ? 'text-green-400' : 'text-red-400'}>
-                      {bc.delta > 0 ? '+' : ''}{bc.delta.toFixed(1)}
-                    </span>
-                    {' '}→ <span className="text-stone-300">{sentiment}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Casualties */}
-        {(result.injuredMercIds.length > 0 || result.fatiguedMercIds.length > 0) && (
-          <div className="mb-4">
-            <h4 className="text-stone-300 text-sm font-medium mb-2">🩹 Casualties</h4>
-            <div className="flex flex-wrap gap-2">
-              {result.injuredMercIds.map((id) => {
-                const m = mercenaries.find((x) => x.id === id);
-                return m ? (
-                  <span key={id} className="text-xs bg-red-900/50 text-red-300 px-2 py-1 rounded">
-                    🩹 {m.name} injured
-                  </span>
-                ) : null;
-              })}
-              {result.fatiguedMercIds.map((id) => {
-                const m = mercenaries.find((x) => x.id === id);
-                return m ? (
-                  <span key={id} className="text-xs bg-yellow-900/50 text-yellow-300 px-2 py-1 rounded">
-                    😓 {m.name} fatigued
-                  </span>
-                ) : null;
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Score Breakdown toggle */}
-        {result.scoreBreakdown.length > 0 && (
-          <div className="mb-4">
-            <button
-              onClick={() => setShowBreakdown((v) => !v)}
-              className="text-xs text-stone-400 hover:text-amber-400 underline transition-colors"
-            >
-              {showBreakdown ? '▲ Hide' : '▼ Show'} score breakdown
-            </button>
-            {showBreakdown && (
-              <div className="mt-2 bg-stone-900/60 rounded-lg p-3 space-y-2">
-                {result.scoreBreakdown.map((entry, i) => (
-                  <div key={i} className="text-xs">
-                    <div className="flex justify-between text-stone-300 font-medium mb-0.5">
-                      <span>{entry.mercName}</span>
-                      <span className="text-amber-400">{entry.total} pts</span>
-                    </div>
-                    <div className="text-stone-500 flex flex-wrap gap-x-3 gap-y-0.5 pl-2">
-                      <span>base {entry.baseScore}</span>
-                      {entry.traitBonus !== 0 && (
-                        <span className="text-green-500">traits {entry.traitBonus > 0 ? '+' : ''}{entry.traitBonus}</span>
-                      )}
-                      {entry.equipBonus !== 0 && (
-                        <span className="text-blue-400">gear {entry.equipBonus > 0 ? '+' : ''}{entry.equipBonus}</span>
-                      )}
-                      {entry.relBonus !== 0 && (
-                        <span className={entry.relBonus > 0 ? 'text-purple-400' : 'text-red-400'}>
-                          bonds {entry.relBonus > 0 ? '+' : ''}{entry.relBonus}
-                        </span>
-                      )}
-                      {entry.statusPenalty !== 0 && (
-                        <span className="text-red-500">status −{entry.statusPenalty}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div className="border-t border-stone-700 pt-2 flex justify-between text-xs text-stone-400">
-                  <span>Total party score</span>
-                  <span className="text-amber-400 font-bold">{result.partyScore}</span>
+          {/* Synergies Activated */}
+          {synergies.length > 0 && (
+             <section className="animate-in slide-in-from-left-4 duration-700">
+                <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                   <span className="text-xl icon-premium">⚡</span> Tactical Synergies
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                   {synergies.map(s => (
+                      <div key={s.name} className="p-4 bg-primary/5 border border-primary/20 rounded-2xl relative overflow-hidden group">
+                         <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-black text-white text-glow">{s.name}</span>
+                            <span className="text-xs font-black text-primary">+{s.scoreBonus}</span>
+                         </div>
+                         <p className="text-[10px] text-stone-400 leading-tight italic">{s.description}</p>
+                      </div>
+                   ))}
                 </div>
+             </section>
+          )}
+
+          {/* Primary Rewards */}
+          <section className="grid grid-cols-3 gap-6">
+            <div className="glass p-5 rounded-3xl text-center group hover:bg-white/10 transition-all loot-pop" style={{ animationDelay: '0.1s' }}>
+              <div className="text-primary font-black text-2xl">+{result.goldEarned}g</div>
+              <div className="text-stone-500 text-[10px] uppercase tracking-widest font-bold mt-1">Bounty</div>
+            </div>
+            <div className="glass p-5 rounded-3xl text-center group hover:bg-white/10 transition-all loot-pop" style={{ animationDelay: '0.3s' }}>
+              <div className="text-yellow-500 font-black text-2xl">+{result.renownEarned}</div>
+              <div className="text-stone-500 text-[10px] uppercase tracking-widest font-bold mt-1">Renown</div>
+            </div>
+            {(result.suppliesEarned ?? 0) > 0 && (
+              <div className="glass p-5 rounded-3xl text-center group hover:bg-white/10 transition-all loot-pop" style={{ animationDelay: '0.5s' }}>
+                <div className="text-emerald-400 font-black text-2xl">+{result.suppliesEarned}</div>
+                <div className="text-stone-500 text-[10px] uppercase tracking-widest font-bold mt-1">Supplies</div>
               </div>
             )}
-          </div>
-        )}
+          </section>
 
-        <div className="flex gap-3">
-          <button
-            onClick={() => { dismissResult(); setShowBreakdown(false); }}
-            className="flex-1 py-2 rounded bg-amber-700 hover:bg-amber-600 text-white font-medium transition-colors"
-          >
-            Back to Guild Hall
-          </button>
-          <button
-            onClick={() => { dismissResult(); setShowBreakdown(false); setScreen('roster'); }}
-            className="px-4 py-2 rounded bg-stone-700 hover:bg-stone-600 text-stone-200 text-sm transition-colors"
-          >
-            View Roster
-          </button>
+          {/* Detailed Findings Grid */}
+          {(hasMaterials || result.itemsEarned.length > 0 || bondChanges.length > 0) && (
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Materials & Items */}
+              <div className="space-y-6">
+                {hasMaterials && (
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-black text-stone-500 uppercase tracking-widest">Resources Found</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(materialsEarned).filter(([, q]) => q > 0).map(([id, q]) => {
+                         const mat = MATERIALS_MAP[id];
+                         return (
+                           <span key={id} className="stat-badge text-[10px] bg-white/5 border-white/5 text-stone-300 loot-pop" style={{ animationDelay: '0.7s' }}>
+                             {mat?.icon} {mat?.name} <span className="text-primary ml-1">x{q}</span>
+                           </span>
+                         );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {result.itemsEarned.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-black text-stone-500 uppercase tracking-widest">Artifacts & Gear</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {result.itemsEarned.map((id, i) => {
+                         const item = ITEMS_MAP[id];
+                         return (
+                           <span key={i} className={`stat-badge text-[10px] bg-white/5 border-white/10 loot-pop ${RARITY_COLORS[item?.rarity || 'common']}`} style={{ animationDelay: `${0.8 + i * 0.1}s` }}>
+                             {item?.icon} {item?.name}
+                           </span>
+                         );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Bonds & Relationships */}
+              {bondChanges.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-black text-stone-500 uppercase tracking-widest">Dynamics</h4>
+                  <div className="space-y-2">
+                    {bondChanges.map((bc, i) => {
+                      const m1 = mercenaries.find(m => m.id === bc.mercId1);
+                      const m2 = mercenaries.find(m => m.id === bc.mercId2);
+                      const sentiment = bondScoreToSentiment(m1?.bondScores?.[bc.mercId2] ?? 0);
+                      return (
+                        <div key={i} className="glass-dark p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                          <div className="text-[10px] text-stone-300 font-bold">{m1?.name} & {m2?.name}</div>
+                          <div className="flex items-center gap-3">
+                             <span className={`text-[10px] font-black ${bc.delta > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                               {bc.delta > 0 ? '+' : ''}{bc.delta.toFixed(1)}
+                             </span>
+                             <span className="text-[9px] uppercase tracking-tighter text-stone-500 font-bold">{sentiment}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Casualties */}
+          {(result.injuredMercIds.length > 0 || result.fatiguedMercIds.length > 0) && (
+            <section className="space-y-3">
+               <h4 className="text-xs font-black text-stone-500 uppercase tracking-widest">Personnel Status</h4>
+               <div className="flex flex-wrap gap-2">
+                  {result.injuredMercIds.map(id => (
+                    <span key={id} className="stat-badge text-[10px] bg-rose-950/30 text-rose-400 border-rose-900/50">
+                       🩹 {mercenaries.find(m => m.id === id)?.name} (INJURED)
+                    </span>
+                  ))}
+                  {result.fatiguedMercIds.map(id => (
+                    <span key={id} className="stat-badge text-[10px] bg-amber-950/30 text-amber-400 border-amber-900/50">
+                       😓 {mercenaries.find(m => m.id === id)?.name} (FATIGUED)
+                    </span>
+                  ))}
+               </div>
+            </section>
+          )}
+
+          {/* Breakdown Toggle */}
+          <section>
+             <button 
+                onClick={() => setShowBreakdown(!showBreakdown)}
+                className="text-[10px] font-black uppercase tracking-widest text-stone-600 hover:text-stone-400 transition-colors"
+             >
+                {showBreakdown ? 'Hide Deployment Metrics ▲' : 'View Deployment Metrics ▼'}
+             </button>
+             {showBreakdown && (
+               <div className="mt-4 glass-dark rounded-3xl p-6 border border-white/5 animate-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-4">
+                    {result.scoreBreakdown.map((entry, i) => (
+                      <div key={i} className="flex justify-between items-center border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                        <div>
+                          <div className="text-xs font-bold text-white">{entry.mercName}</div>
+                          <div className="flex gap-3 mt-1">
+                             <span className="text-[9px] text-stone-500">Base {entry.baseScore}</span>
+                             {entry.traitBonus !== 0 && <span className="text-[9px] text-emerald-500">Trait +{entry.traitBonus}</span>}
+                             {entry.relBonus !== 0 && <span className="text-[9px] text-primary">Bond {entry.relBonus > 0 ? '+' : ''}{entry.relBonus}</span>}
+                          </div>
+                        </div>
+                        <div className="text-xs font-black font-mono text-stone-400">{entry.total}</div>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+             )}
+          </section>
         </div>
+
+        <footer className="p-10 border-t border-white/5 bg-white/5 flex gap-4">
+           <button 
+              onClick={() => { dismissResult(); setScreen('roster'); }}
+              className="px-8 py-4 rounded-2xl text-stone-400 hover:text-white transition-all font-bold text-sm bg-white/5 border border-white/5 hover:border-white/10"
+           >
+              Personnel Roster
+           </button>
+           <button 
+              onClick={() => { dismissResult(); setShowBreakdown(false); }}
+              className="premium-button flex-1 py-4 text-sm font-black uppercase tracking-[0.2em]"
+           >
+              Dismiss Report
+           </button>
+        </footer>
       </div>
     </div>
   );

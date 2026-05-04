@@ -56,50 +56,55 @@ export function InventoryPanel() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-amber-400 mb-4">🎒 Inventory</h1>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setActiveTab('items')}
-          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-            activeTab === 'items' ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-300 hover:bg-stone-700'
-          }`}
-        >
-          Items ({inventoryItemIds.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('materials')}
-          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-            activeTab === 'materials' ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-300 hover:bg-stone-700'
-          }`}
-        >
-          Materials ({totalMaterials})
-        </button>
-      </div>
+    <div className="p-6 max-w-5xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-bold font-heading text-white tracking-tight flex items-center gap-3">
+            <span className="text-primary drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">🎒</span>
+            Guild Inventory
+          </h1>
+          <p className="text-stone-400 mt-2 max-w-md italic font-serif leading-relaxed">
+            "Gold is the blood of the guild, and the inventory its iron heart."
+          </p>
+        </div>
+        <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 gap-1 shadow-inner">
+          <button
+            onClick={() => setActiveTab('items')}
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all haptic-click ${
+              activeTab === 'items' ? 'bg-primary text-stone-950 shadow-lg shadow-primary/20' : 'text-stone-500 hover:text-white'
+            }`}
+          >
+            Items ({inventoryItemIds.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('materials')}
+            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all haptic-click ${
+              activeTab === 'materials' ? 'bg-primary text-stone-950 shadow-lg shadow-primary/20' : 'text-stone-500 hover:text-white'
+            }`}
+          >
+            Materials ({totalMaterials})
+          </button>
+        </div>
+      </header>
 
       {activeTab === 'materials' && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-stone-400 text-sm">
-              {totalMaterials === 0
-                ? 'No materials yet. Complete missions and expeditions to gather them.'
-                : `${totalMaterials} total material${totalMaterials !== 1 ? 's' : ''}.`}
-            </p>
+        <section className="space-y-6">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-[10px] font-black text-stone-600 uppercase tracking-[0.3em]">Raw Resources</h2>
             <button
               onClick={() => setScreen('workshop')}
-              className="text-xs text-amber-400 hover:text-amber-300 underline"
+              className="text-[10px] font-black text-primary hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2 group haptic-click"
             >
-              Open Workshop →
+              Master Forge <span className="group-hover:translate-x-1 transition-transform">→</span>
             </button>
           </div>
+
           {totalMaterials === 0 ? (
-            <div className="text-center text-stone-600 py-12 italic">
-              Nothing here yet. Send parties on missions and expeditions.
+            <div className="py-24 text-center glass-dark rounded-[2.5rem] border border-dashed border-white/10">
+              <p className="text-stone-500 text-sm italic font-serif">Your supply crates are empty. Gather materials from the field.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
               {Object.entries(materials)
                 .filter(([, qty]) => qty > 0)
                 .sort(([a], [b]) => a.localeCompare(b))
@@ -109,45 +114,42 @@ export function InventoryPanel() {
                   return (
                     <div
                       key={matId}
-                      className="bg-stone-800 border border-stone-700 rounded p-3 flex items-center gap-3"
+                      className="glass-dark border border-white/5 rounded-2xl p-4 flex flex-col items-center text-center gap-2 hover:border-white/10 transition-all group"
                     >
-                      <span className="text-2xl">{mat.icon}</span>
+                      <span className="text-3xl group-hover:scale-110 transition-transform duration-500">{mat.icon}</span>
                       <div>
-                        <div className="text-sm font-medium text-stone-200">{mat.name}</div>
-                        <div className="text-xs text-stone-400">x{qty}</div>
-                        <div className="text-xs text-stone-500 capitalize">{mat.rarity}</div>
+                        <div className="text-[10px] font-black text-stone-300 uppercase tracking-tighter truncate">{mat.name}</div>
+                        <div className="text-sm font-bold text-primary">x{qty}</div>
+                        <div className="text-[8px] text-stone-600 font-black uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">{mat.rarity}</div>
                       </div>
                     </div>
                   );
                 })}
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {activeTab === 'items' && (
-        <div>
-          <p className="text-stone-400 text-sm mb-6">
-            {inventoryItemIds.length === 0
-              ? 'The stash is empty. Complete missions to acquire loot.'
-              : `${inventoryItemIds.length} item${inventoryItemIds.length !== 1 ? 's' : ''} in the stash.`}
-          </p>
+        <section className="space-y-8">
+          <h2 className="text-[10px] font-black text-stone-600 uppercase tracking-[0.3em] px-1">Equipment Stash</h2>
 
-          {/* Equip merc picker */}
+          {/* Equip merc picker overlay */}
           {equipTarget && (
-            <div className="mb-6 bg-stone-800 border border-amber-700/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-amber-400 font-medium text-sm">
-                  Equip {items[equipTarget.itemId]?.name} — choose a mercenary
-                </h3>
+            <div className="glass rounded-[2rem] border-primary/30 p-8 shadow-2xl animate-in zoom-in-95 duration-300 bg-stone-950/80 backdrop-blur-3xl">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                   <h3 className="text-primary font-black uppercase text-[10px] tracking-[0.3em] mb-1">Logistics: Tactical Assignment</h3>
+                   <p className="text-white font-bold text-sm">Equip {items[equipTarget.itemId]?.name} to a mercenary</p>
+                </div>
                 <button
                   onClick={() => setEquipTarget(null)}
-                  className="text-xs text-stone-500 hover:text-stone-300"
+                  className="text-[10px] font-black text-stone-500 hover:text-white uppercase tracking-widest haptic-click"
                 >
-                  ✕ Cancel
+                  Cancel Operation [x]
                 </button>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {mercenaries.map((merc) => {
                   const currentItemId = merc.equipment[equipTarget.slot];
                   const currentItem = currentItemId ? items[currentItemId] : null;
@@ -155,22 +157,24 @@ export function InventoryPanel() {
                     <button
                       key={merc.id}
                       onClick={() => handleEquipToMerc(merc.id)}
-                      className="text-left rounded border border-stone-600 hover:border-amber-500 bg-stone-900 hover:bg-stone-800 p-2.5 transition-colors"
+                      className="text-left glass-dark rounded-2xl border border-white/5 hover:border-primary/50 hover:bg-primary/5 p-4 transition-all haptic-click group"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{merc.portrait}</span>
-                        <div>
-                          <div className="text-xs font-medium text-stone-200">{merc.name}</div>
-                          <div className="text-xs text-stone-500">{merc.title}</div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">{merc.portrait}</div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-white truncate">{merc.name}</div>
+                          <div className="text-[9px] text-stone-500 font-black uppercase tracking-tighter">{merc.title}</div>
                         </div>
                       </div>
-                      {currentItem ? (
-                        <div className="text-xs text-stone-500 mt-1 truncate">
-                          Current: {currentItem.name} → will be returned
-                        </div>
-                      ) : (
-                        <div className="text-xs text-stone-600 mt-1">Slot empty</div>
-                      )}
+                      <div className="mt-4 pt-3 border-t border-white/5">
+                        {currentItem ? (
+                          <div className="text-[9px] text-amber-400 font-black uppercase tracking-widest flex items-center gap-1.5">
+                            <span className="text-stone-600">Replaces:</span> {currentItem.name}
+                          </div>
+                        ) : (
+                          <div className="text-[9px] text-stone-600 font-black uppercase tracking-widest">Available Slot</div>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -179,35 +183,35 @@ export function InventoryPanel() {
           )}
 
           {uniqueIds.length === 0 ? (
-            <div className="text-center text-stone-600 py-16 italic">
-              Nothing here yet. Send a party on a mission.
+            <div className="py-32 text-center glass-dark rounded-[2.5rem] border border-dashed border-white/10">
+              <p className="text-stone-500 text-sm italic font-serif">The vault is currently empty. Reclaim glory to reclaim gear.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {uniqueIds.map((id) => {
                 const item = items[id];
                 if (!item) return null;
                 const slot = CATEGORY_TO_SLOT[item.category];
                 const equippable = slot !== null;
                 return (
-                  <div key={id} className="rounded border border-stone-700 bg-stone-800 flex flex-col">
+                  <div key={id} className="premium-card flex flex-col h-full group hover:border-white/20 transition-all">
                     <div className="flex-1">
                       <ItemCard item={item} count={counts[id]} />
                     </div>
-                    <div className="flex gap-2 px-3 pb-3">
+                    <div className="flex gap-2 mt-6">
                       {equippable && (
                         <button
                           onClick={() => handleEquip(id)}
-                          className="flex-1 py-1 text-xs rounded bg-amber-800 hover:bg-amber-700 text-white transition-colors"
+                          className="flex-[2] py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-primary text-stone-950 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.95] haptic-click"
                         >
                           Equip
                         </button>
                       )}
                       <button
                         onClick={() => handleSell(item)}
-                        className="flex-1 py-1 text-xs rounded bg-stone-700 hover:bg-stone-600 text-stone-300 transition-colors"
+                        className="flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-white/5 hover:bg-white/10 text-stone-300 border border-white/5 haptic-click"
                       >
-                        Sell {item.value}g
+                        Sell ({item.value}g)
                       </button>
                     </div>
                   </div>
@@ -215,8 +219,11 @@ export function InventoryPanel() {
               })}
             </div>
           )}
-        </div>
+        </section>
       )}
+    </div>
+  );
+}
     </div>
   );
 }

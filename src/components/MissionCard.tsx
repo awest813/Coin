@@ -31,51 +31,69 @@ export function MissionCard({ mission, onAssign, disabled }: Props) {
   const diff = DIFFICULTY_CONFIG(mission.difficulty);
 
   return (
-    <div className="rounded-lg border border-stone-700 bg-gradient-to-br from-stone-900 to-stone-800 p-4 hover:border-stone-600 transition-colors">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="font-semibold font-heading text-[0.9rem] text-stone-100">
+    <div className={`premium-card p-6 group transition-all duration-700 ${disabled ? 'opacity-50 grayscale-[0.2]' : ''} ${mission.reward.gold > 200 ? 'shimmer-effect' : ''}`}>
+      <div className="flex flex-col md:flex-row items-stretch gap-8">
+        {/* Main Content */}
+        <div className="flex-1 space-y-5">
+          <div className="flex flex-wrap items-center gap-4">
+            <h3 className="text-2xl font-black font-heading text-white tracking-tighter group-hover:text-primary transition-all duration-500 text-glow">
               {mission.name}
             </h3>
-          </div>
-          <p className="text-sm text-stone-400 mb-2 leading-snug">{mission.description}</p>
-
-          {/* Difficulty bar */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`text-xs font-semibold ${diff.color} w-16 shrink-0`}>{diff.label}</span>
-            <div className="flex-1 bg-stone-700 rounded-full h-1.5">
-              <div className={`${diff.bar} h-1.5 rounded-full stat-bar-fill`} style={{ width: `${diff.pct}%` }} />
+            <div className="flex gap-2">
+              {mission.tags.map((tag) => (
+                <span key={tag} className="stat-badge text-[9px] bg-primary/5 border-primary/20 text-primary font-black">
+                  {TAG_ICONS[tag] ?? '📌'} {tag.toUpperCase()}
+                </span>
+              ))}
             </div>
-            <span className="text-xs text-stone-500 w-6 text-right">d{mission.difficulty}</span>
           </div>
 
-          {/* Tags */}
-          <div className="flex flex-wrap gap-1 text-xs">
-            {mission.tags.map((tag) => (
-              <span key={tag} className="bg-stone-700/80 text-stone-300 px-2 py-0.5 rounded-full border border-stone-600/40">
-                {TAG_ICONS[tag] ?? '📌'} {tag}
-              </span>
-            ))}
+          <p className="text-stone-400 text-[13px] italic font-serif leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity">
+            "{mission.description}"
+          </p>
+
+          <div className="pt-2">
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] mb-2">
+              <span className={`${diff.color} drop-shadow-sm`}>{diff.label} Difficulty</span>
+              <span className="text-stone-500">Tier {Math.ceil(mission.difficulty / 4)} Contract</span>
+            </div>
+            <div className="h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5 shadow-inner p-[1px]">
+              <div 
+                className={`h-full rounded-full transition-all duration-1000 ${diff.bar} shadow-[0_0_12px_rgba(251,191,36,0.5)]`} 
+                style={{ width: `${diff.pct}%` }} 
+              />
+            </div>
           </div>
         </div>
 
-        {/* Rewards panel */}
-        <div className="shrink-0 flex flex-col gap-1 items-end">
-          <span className="text-xs text-stone-500">⏱ {mission.durationLabel}</span>
-          <span className="text-sm font-semibold text-amber-300">💰 {mission.reward.gold}g</span>
-          <span className="text-xs text-yellow-400">⭐ +{mission.reward.renown}</span>
+        {/* Rewards & Action */}
+        <div className="w-full md:w-48 flex md:flex-col justify-between items-stretch gap-4 p-4 glass-dark rounded-2xl border border-white/5">
+          <div className="space-y-2">
+             <div className="flex justify-between items-center">
+               <span className="text-[9px] text-stone-500 font-black uppercase tracking-widest">Payment</span>
+               <div className="text-primary font-black text-xl text-glow">💰 {mission.reward.gold}g</div>
+             </div>
+             <div className="flex justify-between items-center">
+               <span className="text-[9px] text-stone-500 font-black uppercase tracking-widest">Prestige</span>
+               <div className="text-yellow-500 text-xs font-black">⭐ +{mission.reward.renown}</div>
+             </div>
+             <div className="h-px bg-white/5 my-2" />
+             <div className="flex justify-between items-center text-stone-400 text-[10px] font-mono font-bold">
+               <span>DURATION</span>
+               <span className="flex items-center gap-1.5 text-white">
+                 <span className="text-sm">⏱</span> {mission.durationLabel}
+               </span>
+             </div>
+          </div>
+          
+          <button
+            onClick={onAssign}
+            disabled={disabled}
+            className={`premium-button w-full !text-[9px] !py-2 ${disabled ? 'opacity-30 grayscale cursor-not-allowed pointer-events-none' : ''}`}
+          >
+            {disabled ? 'PERSONNEL DEPLOYED' : 'INITIALIZE CONTRACT'}
+          </button>
         </div>
-      </div>
-
-      <div className="mt-3 border-t border-stone-700/60 pt-3">
-        <button
-          onClick={onAssign}
-          disabled={disabled}
-          className="w-full py-1.5 rounded font-semibold text-sm transition-all duration-150 bg-amber-800 hover:bg-amber-700 active:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-sm"
-        >
-          {disabled ? '⚔️ Party Deployed' : '⚔️ Send Party'}
-        </button>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import type { Item } from '~/types/item';
 import type { MissionTemplate, MissionResult, MissionOutcome, ScoreBreakdownEntry } from '~/types/mission';
 import type { RoomUpgrade } from '~/types/guild';
 import { ITEMS_MAP } from '~/data/items';
+import { ARTIFACTS_MAP } from '~/data/artifacts';
 
 const MAX_UINT32 = 0xffffffff;
 
@@ -144,6 +145,53 @@ export interface SimulationOptions {
   forgeLevel?: number;
   /** Consumable item IDs assigned to this mission */
   consumableItemIds?: string[];
+  /** IDs of artifacts currently unlocked by the guild */
+  unlockedArtifactIds?: string[];
+  /** IDs of active perks unlocked via influence */
+  activePerkIds?: string[];
+  /** IDs of active guild policies */
+  activePolicyIds?: string[];
+}
+
+function computeSynergies(mercs: Mercenary[], template: MissionTemplate): SynergyBonus[] {
+  const synergies: SynergyBonus[] = [];
+  if (mercs.length < 2) return synergies;
+
+  // 1. Double Trouble: 2+ mercs with same combat-relevant trait
+  const traits = mercs.flatMap(m => m.traits.map(t => t.tag));
+  const combatTraits = ['brave', 'tough', 'reckless', 'ruthless', 'hunter'];
+  for (const tag of combatTraits) {
+    if (traits.filter(t => t === tag).length >= 2) {
+      synergies.push({
+        name: `Double ${tag.charAt(0).toUpperCase() + tag.slice(1)}`,
+        scoreBonus: 2,
+        description: `Multiple specialists with the ${tag} trait coordinate their tactics.`
+      });
+      break; // Only one "Double" bonus
+    }
+  }
+
+  // 2. Veteran Pair: 2+ mercs with 10+ missions completed
+  if (mercs.filter(m => m.missionsCompleted >= 10).length >= 2) {
+    synergies.push({
+      name: 'Veteran Coordination',
+      scoreBonus: 3,
+      description: 'Battle-hardened mercenaries move with instinctive precision.'
+    });
+  }
+
+  // 3. Perfect Balance: At least one Strength and one Intellect focused merc (stat > 7)
+  const hasStrong = mercs.some(m => m.stats.strength > 7);
+  const hasSmart = mercs.some(m => m.stats.intellect > 7);
+  if (hasStrong && hasSmart) {
+    synergies.push({
+      name: 'Brains & Brawn',
+      scoreBonus: 2.5,
+      description: 'Tactical planning meets raw physical force.'
+    });
+  }
+
+  return synergies;
 }
 
 export function simulateMission(
@@ -156,8 +204,18 @@ export function simulateMission(
   const scoreBreakdown: ScoreBreakdownEntry[] = mercs.map((m) =>
     scoreMercDetailed(m, template, partyMercIds)
   );
-  let partyScore = scoreBreakdown.reduce((sum, e) => sum + e.total, 0);
+  
+  const synergies = computeSynergies(mercs, template);
+  const synergyScore = synergies.reduce((sum, s) => sum + s.scoreBonus, 0);
+  
+  let partyScore = scoreBreakdown.reduce((sum, e) => sum + e.total, 0) + synergyScore;
 
+  const activeArtifacts = (options.unlockedArtifactIds ?? []).map(id => ARTIFACTS_MAP[id]).filter(Boolean);
+  const activePerks = new Set(options.activePerkIds ?? []);
+  const activePolicies = new Set(options.activePolicyIds ?? []);
+
+  // ── Modifiers ─────────────────────────────────────────────────────────────
+  
   // Consumable effects
   const consumables = options.consumableItemIds ?? [];
   let injuryProtection = 0;
@@ -175,6 +233,40 @@ export function simulateMission(
     }
   }
 
+  // Artifact Modifier: success_chance (Score Boost)
+  const successMod = activeArtifacts.reduce((acc, art) => {
+    const mod = art.modifiers.find(m => m.type === 'success_chance' || (m.type as string) === 'mission_success');
+    return acc + (mod?.value ?? 0);
+  }, 0);
+  partyScore += successMod;
+
+  // Perk Modifier: pale_border_veterans (+1 score in Pale Border)
+  if (activePerks.has('pale_border_veterans') && template.region === 'Pale Border') {
+    partyScore += 1;
+  }
+
+  // Artifact Modifier: injury_chance & fatigue_chance (Reduction)
+  const injuryMod = activeArtifacts.reduce((acc, art) => {
+    const mod = art.modifiers.find(m => m.type === 'injury_chance');
+    return acc + (mod?.value ?? 0);
+  }, 0);
+  injuryProtection += Math.abs(injuryMod); 
+
+  const fatigueMod = activeArtifacts.reduce((acc, art) => {
+    const mod = art.modifiers.find(m => m.type === 'fatigue_chance');
+    return acc + (mod?.value ?? 0);
+  }, 0);
+  fatigueProtection += Math.abs(fatigueMod);
+
+  // Policy Modifier: safety_first
+  if (activePolicies.has('safety_first')) {
+    partyScore -= 2; // Slower, more cautious approach
+    injuryProtection += 0.3;
+    fatigueProtection += 0.2;
+  }
+
+  // ── Resolution ────────────────────────────────────────────────────────────
+
   const roll = seededRandom(seed + template.id);
 
   // margin: positive = over-performed, negative = under-performed
@@ -190,7 +282,7 @@ export function simulateMission(
     outcome = smokeUsed ? 'partial' : 'failure';
   }
 
-  // Gold and renown based on outcome
+  // Gold and renown based on outcome (Perks/Artifacts applied at store level)
   const goldMult = outcome === 'success' ? 1 : outcome === 'partial' ? 0.5 : 0;
   const renownMult = outcome === 'success' ? 1 : outcome === 'partial' ? 0.5 : 0.1;
   const goldEarned = Math.floor(template.reward.gold * goldMult);
@@ -214,9 +306,9 @@ export function simulateMission(
     const r = seededRandom(seed + merc.id + 'status');
     if (outcome === 'failure' && r < Math.max(0.05, 0.4 - injuryProtection)) {
       injuredMercIds.push(merc.id);
-    } else if (outcome === 'partial' && r < Math.max(0.05, 0.25 - fatigueProtection)) {
+    } else if (outcome === 'partial' && r < Math.max(0.05, 0.25 - (fatigueProtection + injuryProtection * 0.5))) {
       fatiguedMercIds.push(merc.id);
-    } else if (outcome === 'success' && r < Math.max(0, 0.1 - fatigueProtection)) {
+    } else if (outcome === 'success' && r < Math.max(0, 0.1 - (fatigueProtection + injuryProtection * 0.5))) {
       fatiguedMercIds.push(merc.id);
     }
   }
@@ -236,6 +328,7 @@ export function simulateMission(
     partyScore,
     difficulty: template.difficulty,
     scoreBreakdown,
+    synergies,
     narrativeEvents,
   };
 }

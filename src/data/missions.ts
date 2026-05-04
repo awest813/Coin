@@ -5,11 +5,13 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: 'mission_caravan',
     name: 'Caravan Escort',
+    region: 'Thornwood',
     description:
       'A merchant needs armed escort through the Thornwood pass. Bandits have been bold lately.',
     tags: ['combat', 'escort'],
     difficulty: 7,
     durationLabel: '2 days',
+    durationSeconds: 60,
     reward: {
       gold: 80,
       renown: 5,
@@ -33,11 +35,13 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: 'mission_noble_coach',
     name: 'Noble\'s Coach',
+    region: 'Thornwood',
     description:
       "Lady Auren Veth is traveling to her summer estate. Her last escort quit without explanation.",
     tags: ['escort', 'social'],
     difficulty: 9,
     durationLabel: '3 days',
+    durationSeconds: 90,
     reward: {
       gold: 110,
       renown: 8,
@@ -61,11 +65,13 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: 'mission_ruin',
     name: 'Ruin Survey',
+    region: 'Ashfen Marsh',
     description:
       'Locate a collapsed watchtower east of Greyfen. Map the site, recover any surviving records.',
     tags: ['exploration', 'ruin'],
     difficulty: 5,
     durationLabel: '3 days',
+    durationSeconds: 90,
     reward: {
       gold: 50,
       renown: 8,
@@ -89,11 +95,13 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: 'mission_lost_cache',
     name: 'The Lost Cache',
+    region: 'Ashfen Marsh',
     description:
       'A dying mercenary whispered a location. Somewhere south of the Ashfen marsh, there is buried treasure.',
     tags: ['exploration', 'ruin'],
     difficulty: 10,
     durationLabel: '4 days',
+    durationSeconds: 120,
     reward: {
       gold: 140,
       renown: 10,
@@ -117,11 +125,13 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: 'mission_informant',
     name: 'Extract the Informant',
+    region: 'City Below',
     description:
       "A city contact needs quiet extraction from a noble's estate before dawn. Discretion is essential.",
     tags: ['stealth', 'social'],
     difficulty: 11,
     durationLabel: '1 day',
+    durationSeconds: 30,
     reward: {
       gold: 120,
       renown: 12,
@@ -145,11 +155,13 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: 'mission_bribe_chain',
     name: 'The Bribe Chain',
+    region: 'City Below',
     description:
       'A guild intermediary needs someone to carry a sealed package through three checkpoints. No questions.',
     tags: ['stealth', 'social'],
     difficulty: 8,
     durationLabel: '1 day',
+    durationSeconds: 30,
     reward: {
       gold: 90,
       renown: 7,
@@ -173,11 +185,13 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
   {
     id: 'mission_bandit_camp',
     name: 'Clear the Bandit Camp',
+    region: 'Grey Mountains',
     description:
       'A camp of twelve armed brigands has been raiding the south road for two weeks. Clear them out.',
     tags: ['combat', 'bounty'],
     difficulty: 13,
     durationLabel: '2 days',
+    durationSeconds: 60,
     reward: {
       gold: 150,
       renown: 14,
@@ -206,6 +220,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['combat', 'hunt'],
     difficulty: 15,
     durationLabel: '2 days',
+    durationSeconds: 60,
     reward: {
       gold: 180,
       renown: 18,
@@ -235,6 +250,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['hunt', 'exploration'],
     difficulty: 6,
     durationLabel: '2 days',
+    durationSeconds: 60,
     reward: {
       gold: 65,
       renown: 6,
@@ -262,6 +278,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['bounty', 'social'],
     difficulty: 8,
     durationLabel: '2 days',
+    durationSeconds: 60,
     reward: {
       gold: 95,
       renown: 9,
@@ -290,6 +307,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['combat', 'social'],
     difficulty: 9,
     durationLabel: '1 day',
+    durationSeconds: 30,
     reward: {
       gold: 100,
       renown: 10,
@@ -317,6 +335,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['exploration', 'ruin', 'hunt'],
     difficulty: 12,
     durationLabel: '3 days',
+    durationSeconds: 90,
     reward: {
       gold: 130,
       renown: 15,
@@ -346,6 +365,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['social', 'exploration'],
     difficulty: 8,
     durationLabel: '3 days',
+    durationSeconds: 90,
     reward: {
       gold: 90,
       renown: 10,
@@ -373,6 +393,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['combat', 'escort'],
     difficulty: 14,
     durationLabel: '1 day',
+    durationSeconds: 30,
     reward: {
       gold: 160,
       renown: 16,
@@ -401,6 +422,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['ruin', 'exploration'],
     difficulty: 11,
     durationLabel: '4 days',
+    durationSeconds: 120,
     reward: {
       gold: 120,
       renown: 14,
@@ -429,6 +451,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     tags: ['combat', 'social'],
     difficulty: 10,
     durationLabel: '2 days',
+    durationSeconds: 60,
     reward: {
       gold: 115,
       renown: 13,

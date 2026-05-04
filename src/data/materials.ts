@@ -116,6 +116,38 @@ export const MATERIALS: Material[] = [
     icon: '🐉',
     value: 120,
   },
+  {
+    id: 'star_silk',
+    name: 'Star Silk',
+    description: 'Glimmering fabric woven from starlight and silence.',
+    rarity: 'rare',
+    icon: '✨',
+    value: 150,
+  },
+  {
+    id: 'obsidian_shard',
+    name: 'Obsidian Shard',
+    description: 'Sharp, black volcanic glass with a soul-chilling edge.',
+    rarity: 'rare',
+    icon: '🖤',
+    value: 100,
+  },
+  {
+    id: 'void_thread',
+    name: 'Void Thread',
+    description: 'A thread that seems to vanish when looked at directly.',
+    rarity: 'rare',
+    icon: '🌑',
+    value: 130,
+  },
+  {
+    id: 'ancient_wood',
+    name: 'Ancient Wood',
+    description: 'Timber from the heart of the Thornwood. Hard as iron.',
+    rarity: 'uncommon',
+    icon: '🪵',
+    value: 40,
+  },
 ];
 
 export const MATERIALS_MAP: Record<string, Material> = Object.fromEntries(

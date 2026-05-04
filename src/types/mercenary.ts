@@ -19,6 +19,7 @@ export interface Trait {
   description: string;
   /** flat bonus added to party score for matching mission tags */
   scoreBonus: number;
+  isLegendary?: boolean;
 }
 
 export type EquipmentSlot = 'weapon' | 'armor' | 'accessory';
@@ -58,4 +59,9 @@ export interface Mercenary {
   background?: string;
   /** Bond scores with other mercs: mercId -> -10 to +10 */
   bondScores?: Record<string, number>;
+  isTraining?: boolean;
+  trainingStat?: keyof MercStats;
+  trainingProgress?: number; // 0 to 100
+  isLegendary?: boolean;
+  uniqueTrait?: string;
 }

@@ -32,8 +32,11 @@ export interface MissionTemplate {
   name: string;
   description: string;
   tags: MissionTag[];
+  /** Which region this contract is set in — used for influence gain */
+  region?: string;
   difficulty: number;   // 1-20
   durationLabel: string; // e.g. "2 days"
+  durationSeconds: number; // e.g. 180 for 3 minutes
   reward: MissionReward;
   /** flavor text keyed by outcome */
   flavorText: Record<MissionOutcome, string>;
@@ -48,8 +51,16 @@ export interface ActiveMission {
   assignedMercIds: string[];
   /** ISO timestamp when mission was sent */
   startedAt: string;
+  /** ISO timestamp when mission will be complete */
+  endTime: string;
   /** item IDs of consumables used on this mission */
   consumablesAssigned?: string[];
+}
+
+export interface SynergyBonus {
+  name: string;
+  scoreBonus: number;
+  description: string;
 }
 
 export interface MissionResult {
@@ -67,5 +78,6 @@ export interface MissionResult {
   partyScore: number;
   difficulty: number;
   scoreBreakdown: ScoreBreakdownEntry[];
+  synergies?: SynergyBonus[];
   narrativeEvents: string[];
 }

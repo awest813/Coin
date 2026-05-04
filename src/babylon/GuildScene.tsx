@@ -6,12 +6,16 @@ import {
   Vector3,
   HemisphericLight,
   DirectionalLight,
+  PointLight,
   MeshBuilder,
   StandardMaterial,
   Color3,
   Color4,
   Camera,
   PointerEventTypes,
+  ParticleSystem,
+  Texture,
+  Animation,
   type AbstractMesh,
 } from '@babylonjs/core';
 import { useGameStore, type ActiveScreen } from '~/store/gameStore';
@@ -29,30 +33,30 @@ interface RoomCfg {
 
 const ROOM_CFG: Record<string, RoomCfg> = {
   room_barracks: {
-    pos: [-3, 0, -0.5],
-    baseColor: [0.22, 0.38, 0.52],
-    emissiveHover: [0.06, 0.12, 0.18],
+    pos: [-3.5, 0, -0.5],
+    baseColor: [0.12, 0.12, 0.15],
+    emissiveHover: [0.08, 0.05, 0.02],
     screen: 'roster',
     label: 'Barracks',
   },
   room_tavern: {
-    pos: [0, 0, 2.2],
-    baseColor: [0.44, 0.24, 0.08],
-    emissiveHover: [0.16, 0.08, 0.02],
+    pos: [0, 0, 2.5],
+    baseColor: [0.15, 0.12, 0.12],
+    emissiveHover: [0.12, 0.08, 0.04],
     screen: 'dashboard',
     label: 'Common Room',
   },
   room_forge: {
-    pos: [3, 0, -0.5],
-    baseColor: [0.52, 0.16, 0.06],
-    emissiveHover: [0.18, 0.05, 0.01],
+    pos: [3.5, 0, -0.5],
+    baseColor: [0.12, 0.15, 0.12],
+    emissiveHover: [0.15, 0.05, 0.01],
     screen: 'workshop',
     label: 'Forge',
   },
 };
 
 const HOVER_CARD_CLASS =
-  'absolute left-3 top-3 max-w-xs rounded-lg border border-stone-700 bg-stone-950/85 px-3 py-2 text-xs text-stone-300 shadow-lg backdrop-blur-sm pointer-events-none';
+  'absolute left-4 top-4 max-w-xs rounded-3xl border border-white/10 bg-stone-950/40 p-6 text-xs text-stone-300 shadow-2xl backdrop-blur-xl pointer-events-none animate-in fade-in zoom-in-95 duration-300';
 
 const ROOM_EFFECT_LABELS: Record<string, Record<string, (val: number) => string>> = {
   room_barracks: {
@@ -73,7 +77,7 @@ function roomEffectLabel(roomId: string, key: string, val: number): string {
   return ROOM_EFFECT_LABELS[roomId]?.[key]?.(val) ?? `${key}: ${val}`;
 }
 
-// ── Pawn state (stored in ref, not React state) ───────────────────────────────
+// ── Pawn state ───────────────────────────────────────────────────────────────
 
 interface PawnData {
   mesh: AbstractMesh;
@@ -82,8 +86,6 @@ interface PawnData {
   homeRoomId: string;
   phase: number;
 }
-
-// ── Helper: build pawn meshes from mercenaries ────────────────────────────────
 
 function buildPawns(
   scene: Scene,
@@ -147,14 +149,56 @@ function buildPawns(
   });
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Particle Helpers ────────────────────────────────────────────────────────
+
+function createForgeSmoke(scene: Scene, position: Vector3) {
+  const particleSystem = new ParticleSystem("forgeSmoke", 200, scene);
+  particleSystem.particleTexture = new Texture("https://www.babylonjs-playground.com/textures/cloud.png", scene);
+  particleSystem.emitter = position;
+  particleSystem.minEmitBox = new Vector3(-0.2, 0, -0.2);
+  particleSystem.maxEmitBox = new Vector3(0.2, 0, 0.2);
+  particleSystem.color1 = new Color4(0.2, 0.2, 0.2, 0.5);
+  particleSystem.color2 = new Color4(0.1, 0.1, 0.1, 0.2);
+  particleSystem.colorDead = new Color4(0, 0, 0, 0);
+  particleSystem.minSize = 0.1;
+  particleSystem.maxSize = 0.4;
+  particleSystem.minLifeTime = 0.5;
+  particleSystem.maxLifeTime = 1.5;
+  particleSystem.emitRate = 30;
+  particleSystem.gravity = new Vector3(0, 2, 0);
+  particleSystem.direction1 = new Vector3(-0.5, 2, -0.5);
+  particleSystem.direction2 = new Vector3(0.5, 2, 0.5);
+  particleSystem.minAngularSpeed = 0;
+  particleSystem.maxAngularSpeed = Math.PI;
+  particleSystem.start();
+  return particleSystem;
+}
+
+function createForgeSparks(scene: Scene, position: Vector3) {
+  const ps = new ParticleSystem("forgeSparks", 100, scene);
+  ps.particleTexture = new Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+  ps.emitter = position;
+  ps.minEmitBox = new Vector3(-0.1, 0.5, -0.1);
+  ps.maxEmitBox = new Vector3(0.1, 0.6, 0.1);
+  ps.color1 = new Color4(1, 0.5, 0, 1);
+  ps.color2 = new Color4(1, 0.2, 0, 1);
+  ps.colorDead = new Color4(0, 0, 0, 0);
+  ps.minSize = 0.02;
+  ps.maxSize = 0.05;
+  ps.minLifeTime = 0.1;
+  ps.maxLifeTime = 0.3;
+  ps.emitRate = 50;
+  ps.gravity = new Vector3(0, -9.81, 0);
+  ps.direction1 = new Vector3(-1, 4, -1);
+  ps.direction2 = new Vector3(1, 6, 1);
+  ps.start();
+  return ps;
+}
 
 export function GuildScene() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const sceneRef = useRef<Scene | null>(null);
-  // These Maps are mutated by the rooms/mercs effects; the init effect captures
-  // the same Map reference so handlers always see the latest meshes/materials.
   const roomMeshesRef = useRef(new Map<string, AbstractMesh>());
   const roomMatsRef = useRef(new Map<string, StandardMaterial>());
   const pawnsRef = useRef(new Map<string, PawnData>());
@@ -162,6 +206,8 @@ export function GuildScene() {
   const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
 
   const { guild, mercenaries, setScreen } = useGameStore();
+  const { currentWeather, unlockedPropIds } = guild;
+
   const hoveredRoom = hoveredRoomId
     ? guild.rooms.find((room) => room.id === hoveredRoomId)
     : null;
@@ -170,10 +216,6 @@ export function GuildScene() {
     ? hoveredRoom.levels[hoveredRoom.level - 1]
     : null;
 
-  // ── Infrastructure init: engine / scene / camera / lights / handlers ──────
-  // setScreen is a Zustand action with a stable identity, so this effect runs
-  // exactly once per mount (same as []).  We list it in deps so the linter and
-  // React Compiler are satisfied.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -181,11 +223,15 @@ export function GuildScene() {
     const engine = new Engine(canvas, true, {
       preserveDrawingBuffer: false,
       stencil: false,
+      antialias: true,
     });
     engineRef.current = engine;
 
     const scene = new Scene(engine);
-    scene.clearColor = new Color4(0.07, 0.05, 0.04, 1);
+    
+    // Dynamic Clear Color
+    const isNight = currentWeather === 'night' || currentWeather === 'storm';
+    scene.clearColor = isNight ? new Color4(0.01, 0.01, 0.02, 1) : new Color4(0.04, 0.03, 0.03, 1);
     sceneRef.current = scene;
 
     // Isometric orthographic camera
@@ -194,20 +240,16 @@ export function GuildScene() {
       -Math.PI / 4,
       Math.PI / 3,
       20,
-      new Vector3(0, 0, 0.6),
+      new Vector3(0, 0, 0.8),
       scene,
     );
     camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
-
-    // Lock the camera angle so the scene stays isometric
-    camera.lowerAlphaLimit = -Math.PI / 4;
-    camera.upperAlphaLimit = -Math.PI / 4;
-    camera.lowerBetaLimit = Math.PI / 3;
-    camera.upperBetaLimit = Math.PI / 3;
+    camera.lowerAlphaLimit = camera.upperAlphaLimit = -Math.PI / 4;
+    camera.lowerBetaLimit = camera.upperBetaLimit = Math.PI / 3;
 
     const updateOrtho = () => {
       const ratio = canvas.clientWidth / Math.max(canvas.clientHeight, 1);
-      const half = 5.8;
+      const half = 6.2;
       camera.orthoTop = half;
       camera.orthoBottom = -half;
       camera.orthoLeft = -half * ratio;
@@ -217,27 +259,95 @@ export function GuildScene() {
 
     // Lighting
     const hemi = new HemisphericLight('hemi', new Vector3(0.2, 1, 0.4), scene);
-    hemi.intensity = 0.85;
-    hemi.diffuse = new Color3(1.0, 0.94, 0.82);
-    hemi.groundColor = new Color3(0.18, 0.13, 0.09);
+    hemi.intensity = isNight ? 0.2 : 0.6;
+    hemi.diffuse = isNight ? new Color3(0.5, 0.5, 0.8) : new Color3(1.0, 0.95, 0.85);
+    hemi.groundColor = new Color3(0.1, 0.08, 0.06);
 
     const sun = new DirectionalLight('sun', new Vector3(-0.6, -1, 0.4), scene);
-    sun.intensity = 0.55;
-    sun.diffuse = new Color3(1.0, 0.88, 0.68);
+    sun.intensity = isNight ? 0.1 : 0.4;
+    sun.diffuse = isNight ? new Color3(0.4, 0.4, 0.7) : new Color3(1.0, 0.9, 0.7);
+
+    // Forge Pulse Light
+    const forgeLight = new PointLight("forgeLight", new Vector3(3.5, 1, -0.5), scene);
+    forgeLight.diffuse = new Color3(1, 0.4, 0.1);
+    forgeLight.intensity = 0.8;
+    
+    // Tavern Glow
+    const tavernLight = new PointLight("tavernLight", new Vector3(0, 1, 2.5), scene);
+    tavernLight.diffuse = new Color3(1, 0.8, 0.2);
+    tavernLight.intensity = 0.5;
+
+    // Weather Particle Systems
+    let weatherPS: ParticleSystem | null = null;
+    if (currentWeather === 'rain' || currentWeather === 'storm') {
+      weatherPS = new ParticleSystem("rain", 2000, scene);
+      weatherPS.particleTexture = new Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+      weatherPS.emitter = new Vector3(0, 10, 0);
+      weatherPS.minEmitBox = new Vector3(-10, 0, -10);
+      weatherPS.maxEmitBox = new Vector3(10, 0, 10);
+      weatherPS.color1 = new Color4(0.7, 0.8, 1, 0.3);
+      weatherPS.minSize = 0.05;
+      weatherPS.maxSize = 0.1;
+      weatherPS.minLifeTime = 1;
+      weatherPS.maxLifeTime = 1.5;
+      weatherPS.emitRate = currentWeather === 'storm' ? 1000 : 500;
+      weatherPS.gravity = new Vector3(0, -9.81, 0);
+      weatherPS.direction1 = new Vector3(0, -1, 0);
+      weatherPS.start();
+    } else if (currentWeather === 'snow') {
+      weatherPS = new ParticleSystem("snow", 1000, scene);
+      weatherPS.particleTexture = new Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+      weatherPS.emitter = new Vector3(0, 10, 0);
+      weatherPS.minEmitBox = new Vector3(-10, 0, -10);
+      weatherPS.maxEmitBox = new Vector3(10, 0, 10);
+      weatherPS.color1 = new Color4(1, 1, 1, 0.6);
+      weatherPS.minSize = 0.05;
+      weatherPS.maxSize = 0.15;
+      weatherPS.minLifeTime = 2;
+      weatherPS.maxLifeTime = 4;
+      weatherPS.emitRate = 200;
+      weatherPS.gravity = new Vector3(0, -1, 0);
+      weatherPS.direction1 = new Vector3(-1, -1, -1);
+      weatherPS.direction2 = new Vector3(1, -1, 1);
+      weatherPS.start();
+    }
+
+    // Render Custom Props
+    unlockedPropIds.forEach(propId => {
+      const prop = DIORAMA_PROPS.find(p => p.id === propId);
+      if (!prop) return;
+      
+      let mesh;
+      if (prop.modelType === 'statue') {
+        mesh = MeshBuilder.CreateBox(prop.id, { size: 0.8 }, scene);
+      } else if (prop.modelType === 'pit') {
+        mesh = MeshBuilder.CreateCylinder(prop.id, { diameter: 1.5, height: 0.1 }, scene);
+      } else {
+        mesh = MeshBuilder.CreateSphere(prop.id, { diameter: 0.6 }, scene);
+      }
+      mesh.position = new Vector3(...prop.position);
+      const mat = new StandardMaterial(prop.id + "Mat", scene);
+      mat.diffuseColor = isNight ? new Color3(0.2, 0.2, 0.3) : new Color3(0.4, 0.4, 0.4);
+      mesh.material = mat;
+    });
 
     // Ground
-    const ground = MeshBuilder.CreateGround(
-      'ground',
-      { width: 13, height: 11 },
-      scene,
-    );
-    ground.position = new Vector3(0, -0.01, 0.6);
+    const ground = MeshBuilder.CreateGround('ground', { width: 14, height: 12 }, scene);
+    ground.position = new Vector3(0, -0.01, 0.8);
     const groundMat = new StandardMaterial('groundMat', scene);
-    groundMat.diffuseColor = new Color3(0.14, 0.11, 0.09);
+    groundMat.diffuseColor = new Color3(0.12, 0.09, 0.07);
     groundMat.specularColor = Color3.Black();
     ground.material = groundMat;
 
-    // Capture the Maps by reference — rooms/mercs effects will populate them
+    // Grid lines for premium feel
+    const gridLines = MeshBuilder.CreateGround('grid', { width: 14, height: 12, subdivisions: 14 }, scene);
+    gridLines.position = new Vector3(0, 0, 0.8);
+    const gridMat = new StandardMaterial('gridMat', scene);
+    gridMat.diffuseColor = new Color3(1, 1, 1);
+    gridMat.alpha = 0.03;
+    gridMat.wireframe = true;
+    gridLines.material = gridMat;
+
     const mats = roomMatsRef.current;
     const pawns = pawnsRef.current;
 
@@ -246,10 +356,14 @@ export function GuildScene() {
       const dt = engine.getDeltaTime() / 1000;
       const t = performance.now() / 1000;
 
+      // Pulse Forge light
+      forgeLight.intensity = 0.6 + Math.sin(t * 3) * 0.4;
+      tavernLight.intensity = 0.4 + Math.sin(t * 1.5) * 0.15;
+
       for (const [, pawn] of pawns) {
         if (pawn.idleCountdown > 0) {
           pawn.idleCountdown -= dt;
-          pawn.mesh.position.y = 0.24 + Math.sin(t * 2.2 + pawn.phase) * 0.018;
+          pawn.mesh.position.y = 0.24 + Math.sin(t * 2.5 + pawn.phase) * 0.02;
           continue;
         }
 
@@ -260,11 +374,11 @@ export function GuildScene() {
         const dist = Math.sqrt(dx * dx + dz * dz);
 
         if (dist < 0.06) {
-          pawn.idleCountdown = 1.5 + Math.random() * 2.5;
+          pawn.idleCountdown = 1.5 + Math.random() * 3;
           const cfg = ROOM_CFG[pawn.homeRoomId];
           if (cfg) {
             const a = Math.random() * Math.PI * 2;
-            const rad = Math.random() * 0.9;
+            const rad = Math.random() * 1.2;
             pawn.target = new Vector3(
               cfg.pos[0] + Math.cos(a) * rad,
               0.24,
@@ -272,7 +386,7 @@ export function GuildScene() {
             );
           }
         } else {
-          const step = Math.min(1.2 * dt, dist);
+          const step = Math.min(1.4 * dt, dist);
           pos.x += (dx / dist) * step;
           pos.z += (dz / dist) * step;
           pos.y = 0.24;
@@ -313,7 +427,6 @@ export function GuildScene() {
       }
     });
 
-    // ── Resize ────────────────────────────────────────────────────────────
     const handleResize = () => {
       engine.resize();
       updateOrtho();
@@ -322,8 +435,16 @@ export function GuildScene() {
 
     engine.runRenderLoop(() => scene.render());
 
+    // Particles for Forge
+    const forgePos = new Vector3(...ROOM_CFG.room_forge.pos);
+    const smoke = createForgeSmoke(scene, forgePos.add(new Vector3(0.6, 1.2, 0.6)));
+    const sparks = createForgeSparks(scene, forgePos.add(new Vector3(0, 0, 0)));
+
     return () => {
       window.removeEventListener('resize', handleResize);
+      smoke.stop();
+      sparks.stop();
+      if (weatherPS) weatherPS.stop();
       scene.dispose();
       engine.dispose();
       engineRef.current = null;
@@ -332,9 +453,9 @@ export function GuildScene() {
       pawns.clear();
       hoveredRoomRef.current = null;
     };
-  }, [setScreen]);
+  }, [setScreen, currentWeather, unlockedPropIds]);
 
-  // ── Create / update room buildings when guild.rooms changes ───────────────
+  // ── Room Buildings & Upgrade Props ───────────────────────────────────────
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
@@ -344,93 +465,144 @@ export function GuildScene() {
     for (const room of guild.rooms) {
       const cfg = ROOM_CFG[room.id];
       if (!cfg) continue;
-      const bHeight = 0.65 + room.level * 0.35;
+      const bHeight = 0.8 + room.level * 0.4;
 
       let bldg = roomMeshes.get(room.id);
       if (!bldg) {
-        // First time: create building body + roof
-        bldg = MeshBuilder.CreateBox(
-          `bldg_${room.id}`,
-          { width: 2.3, height: 1, depth: 2.3 },
-          scene,
-        );
+        // Create Building Base
+        bldg = MeshBuilder.CreateBox(`bldg_${room.id}`, { width: 2.6, height: 1, depth: 2.6 }, scene);
         bldg.position = new Vector3(cfg.pos[0], bHeight / 2, cfg.pos[2]);
         bldg.metadata = { type: 'room', roomId: room.id };
 
         const mat = new StandardMaterial(`mat_${room.id}`, scene);
         mat.diffuseColor = new Color3(...cfg.baseColor);
-        mat.specularColor = new Color3(0.08, 0.08, 0.08);
+        mat.specularColor = new Color3(0.1, 0.1, 0.1);
         bldg.material = mat;
         roomMeshes.set(room.id, bldg);
         roomMats.set(room.id, mat);
 
-        const roof = MeshBuilder.CreateBox(
-          `roof_${room.id}`,
-          { width: 2.5, height: 0.11, depth: 2.5 },
-          scene,
-        );
-        roof.position = new Vector3(cfg.pos[0], bHeight + 0.055, cfg.pos[2]);
+        // Roof
+        const roof = MeshBuilder.CreateBox(`roof_${room.id}`, { width: 2.8, height: 0.15, depth: 2.8 }, scene);
+        roof.position = new Vector3(cfg.pos[0], bHeight + 0.075, cfg.pos[2]);
         roof.metadata = { type: 'room', roomId: room.id };
-        const [r, g, b] = cfg.baseColor;
         const roofMat = new StandardMaterial(`roofMat_${room.id}`, scene);
-        roofMat.diffuseColor = new Color3(r * 0.65, g * 0.65, b * 0.65);
-        roofMat.specularColor = Color3.Black();
+        const [r, g, b] = cfg.baseColor;
+        roofMat.diffuseColor = new Color3(r * 0.7, g * 0.7, b * 0.7);
         roof.material = roofMat;
+
+        // Add Level Indicators (Windows)
+        for (let l = 1; l <= room.maxLevel; l++) {
+          const window = MeshBuilder.CreatePlane(`win_${room.id}_${l}`, { size: 0.3 }, scene);
+          window.position = new Vector3(
+            cfg.pos[0] + (l % 2 === 0 ? 1.31 : -1.31), 
+            0.5 + (l * 0.4), 
+            cfg.pos[2] + (l > 2 ? 0.5 : -0.5)
+          );
+          window.rotation.y = l % 2 === 0 ? Math.PI / 2 : -Math.PI / 2;
+          const winMat = new StandardMaterial(`winMat_${room.id}_${l}`, scene);
+          winMat.emissiveColor = new Color3(1, 0.8, 0.2);
+          winMat.alpha = 0.1;
+          window.material = winMat;
+          window.parent = bldg;
+          window.setEnabled(room.level >= l);
+        }
+
+        // Room Props (Level 2+)
+        if (room.id === 'room_barracks') {
+          const dummy = MeshBuilder.CreateCylinder("dummy", { height: 0.6, diameter: 0.2 }, scene);
+          dummy.position = new Vector3(cfg.pos[0] - 1.8, 0.3, cfg.pos[2]);
+          const dummyMat = new StandardMaterial("dummyMat", scene);
+          dummyMat.diffuseColor = new Color3(0.4, 0.3, 0.2);
+          dummy.material = dummyMat;
+          dummy.setEnabled(room.level >= 2);
+        }
       }
 
-      // Always sync height (handles upgrades)
+      // Update geometry for existing buildings
       bldg.scaling.y = bHeight;
       bldg.position.y = bHeight / 2;
       const roof = scene.getMeshByName(`roof_${room.id}`);
-      if (roof) roof.position.y = bHeight + 0.055;
+      if (roof) roof.position.y = bHeight + 0.075;
+      
+      // Update Props visibility
+      for (let l = 1; l <= room.maxLevel; l++) {
+        const win = scene.getMeshByName(`win_${room.id}_${l}`);
+        if (win) win.setEnabled(room.level >= l);
+      }
+      
+      const dummy = scene.getMeshByName("dummy");
+      if (dummy && room.id === 'room_barracks') dummy.setEnabled(room.level >= 2);
+
+      // Add a Banner for high level rooms
+      if (room.level >= 3 && !scene.getMeshByName(`banner_${room.id}`)) {
+        const banner = MeshBuilder.CreateBox(`banner_${room.id}`, { width: 0.1, height: 1.2, depth: 0.6 }, scene);
+        banner.position = new Vector3(cfg.pos[0] + 1.4, bHeight - 0.5, cfg.pos[2]);
+        const banMat = new StandardMaterial(`banMat_${room.id}`, scene);
+        banMat.diffuseColor = new Color3(0.8, 0.1, 0.1);
+        banner.material = banMat;
+      }
     }
   }, [guild.rooms]);
 
-  // ── Rebuild pawns when mercenaries change ────────────────────────────────
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
     const pawns = pawnsRef.current;
-
-    for (const [, pawn] of pawns) {
-      pawn.mesh.dispose();
-    }
+    for (const [, pawn] of pawns) pawn.mesh.dispose();
     pawns.clear();
-
     buildPawns(scene, mercenaries, pawns);
   }, [mercenaries]);
 
   return (
-    <div className="relative">
+    <div className="relative group/scene">
       <canvas
         ref={canvasRef}
-        style={{ width: '100%', height: '360px', display: 'block', touchAction: 'none' }}
+        className="w-full h-[420px] block touch-none cursor-default transition-opacity duration-1000"
       />
-      <div
-        role="status"
-        aria-live="polite"
-        className={HOVER_CARD_CLASS}
-      >
+      
+      {/* Dynamic Overlay Info */}
+      <div className={HOVER_CARD_CLASS}>
         {hoveredRoom && hoveredCfg && hoveredLevel ? (
-          <>
-            <div className="text-sm font-semibold text-amber-300">
-              {hoveredRoom.icon} {hoveredRoom.name}
+          <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-3xl filter drop-shadow-lg">{hoveredRoom.icon}</div>
+              <div>
+                <h3 className="text-lg font-bold text-white font-heading tracking-tight">
+                  {hoveredRoom.name}
+                </h3>
+                <div className="text-[10px] text-primary font-black uppercase tracking-widest">
+                  Tier {hoveredRoom.level} Installation
+                </div>
+              </div>
             </div>
-            <div className="mt-0.5 text-stone-400">
-              Level {hoveredRoom.level}/{hoveredRoom.maxLevel} · click to open {hoveredCfg.label}
+
+            <div className="space-y-4">
+              <p className="text-stone-400 italic font-serif leading-relaxed">
+                "Modernized facilities ensure maximum efficiency in guild operations."
+              </p>
+              
+              <div className="space-y-2">
+                <div className="text-[10px] text-stone-500 font-bold uppercase tracking-widest border-b border-white/5 pb-1">Active Protocols</div>
+                <ul className="space-y-1.5">
+                  {Object.entries(hoveredLevel.effects).map(([key, val]) => (
+                    <li key={key} className="flex items-center gap-2 text-emerald-400 font-bold uppercase text-[9px] tracking-tighter">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      {roomEffectLabel(hoveredRoom.id, key, val)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-4 border-t border-white/5 text-[9px] text-stone-600 font-bold uppercase tracking-[0.2em] animate-pulse">
+                Click to manage facility
+              </div>
             </div>
-            <div className="mt-2 text-stone-400">Active room effects</div>
-            <ul className="mt-0.5 space-y-0.5 text-emerald-400">
-              {Object.entries(hoveredLevel.effects).map(([key, val]) => (
-                <li key={key}>{roomEffectLabel(hoveredRoom.id, key, val)}</li>
-              ))}
-            </ul>
-          </>
+          </div>
         ) : (
-          <>
-            <div className="text-sm font-semibold text-amber-300">Guildhall</div>
-            <div className="mt-0.5 text-stone-400">Hover a room for details, click to navigate.</div>
-          </>
+          <div className="text-center py-4">
+            <div className="text-stone-500 font-black uppercase tracking-[0.3em] text-[10px] mb-1">Guild Enclave</div>
+            <div className="text-stone-600 italic font-serif">Surveying facilities...</div>
+          </div>
         )}
       </div>
     </div>
