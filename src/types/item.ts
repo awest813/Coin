@@ -18,6 +18,8 @@ export interface Item {
   id: string;
   name: string;
   description: string;
+  /** Optional display icon for inventory and reward chips */
+  icon?: string;
   /** Short in-world flavor text shown below description */
   flavorText?: string;
   rarity: ItemRarity;

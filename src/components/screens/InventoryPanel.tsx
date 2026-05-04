@@ -224,6 +224,3 @@ export function InventoryPanel() {
     </div>
   );
 }
-    </div>
-  );
-}

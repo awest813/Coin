@@ -1,11 +1,12 @@
 import { useGameStore } from '~/store/gameStore';
 import { DIORAMA_PROPS } from '~/types/customization';
+import type { WeatherId } from '~/types/guild';
 
 export function DioramaShop() {
   const { guild, unlockProp, setWeather } = useGameStore();
   const { unlockedPropIds, resources, currentWeather } = guild;
 
-  const WEATHERS: { id: string; name: string; icon: string; desc: string }[] = [
+  const WEATHERS: { id: WeatherId; name: string; icon: string; desc: string }[] = [
     { id: 'clear', name: 'Standard Clarity', icon: '☀️', desc: 'The default operational environment.' },
     { id: 'rain', name: 'Crying Skies', icon: '🌧️', desc: 'A somber mood for the heavy-hearted.' },
     { id: 'snow', name: 'The Pale Breath', icon: '❄️', desc: 'A cold silence blankets the enclave.' },

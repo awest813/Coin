@@ -207,7 +207,6 @@ export function ExpeditionPanel() {
     startExpedition,
     advanceExpeditionStage,
     dismissExpeditionResult,
-    setScreen,
   } = useGameStore();
 
   function isLocked(template: ExpeditionTemplate): [boolean, string] {
@@ -264,7 +263,6 @@ export function ExpeditionPanel() {
               {/* Stage progress visualization */}
               <div className="flex gap-3 mb-8">
                 {activeTemplate.stages.map((s, i) => {
-                  const result = activeExpedition.stageResults[i];
                   const isCurrent = i === activeExpedition.currentStageIndex;
                   const isDone = i < activeExpedition.currentStageIndex;
                   return (
@@ -448,9 +446,6 @@ export function ExpeditionPanel() {
           </div>
         </section>
       )}
-    </div>
-  );
-}
     </div>
   );
 }

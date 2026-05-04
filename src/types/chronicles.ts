@@ -1,5 +1,6 @@
 export type ChronicleEntryType = 
   | 'mission_success' 
+  | 'hero_unlock'
   | 'artifact_forged' 
   | 'hero_recruited' 
   | 'room_upgraded' 

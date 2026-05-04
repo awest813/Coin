@@ -113,6 +113,8 @@ function RegionCard({
 export function WorldMap() {
   const { guild } = useGameStore();
   const [selected, setSelected] = useState<string | null>(REGION_DATA[0].id);
+  void BIOME_ICONS;
+  void RegionCard;
 
   const activePerks = getAllActivePerks(guild.regionalInfluence ?? {});
   const selectedRegion = REGION_DATA.find(r => r.id === selected);

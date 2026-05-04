@@ -1,11 +1,10 @@
-import type { GuildResources } from './guild';
-
 export type ArtifactModifierType = 
   | 'mission_duration' 
   | 'success_chance' 
   | 'supply_cap' 
   | 'gold_gain' 
   | 'injury_recovery' 
+  | 'injury_chance'
   | 'morale_gain'
   | 'fatigue_chance'
   | 'recruit_quality';

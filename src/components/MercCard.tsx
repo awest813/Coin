@@ -8,14 +8,6 @@ interface Props {
   compact?: boolean;
 }
 
-function StatMiniBar({ value, color = 'bg-amber-500' }: { value: number; color?: string }) {
-  return (
-    <div className="w-full bg-stone-700 rounded-full h-1">
-      <div className={`${color} h-1 rounded-full stat-bar-fill`} style={{ width: `${value * 10}%` }} />
-    </div>
-  );
-}
-
 const MORALE_COLOR = (m: number) =>
   m >= 7 ? 'text-green-400' : m >= 4 ? 'text-yellow-400' : 'text-red-400';
 

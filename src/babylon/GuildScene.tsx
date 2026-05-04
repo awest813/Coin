@@ -15,11 +15,11 @@ import {
   PointerEventTypes,
   ParticleSystem,
   Texture,
-  Animation,
   type AbstractMesh,
 } from '@babylonjs/core';
 import { useGameStore, type ActiveScreen } from '~/store/gameStore';
 import type { Mercenary } from '~/types/mercenary';
+import { DIORAMA_PROPS } from '~/types/customization';
 
 // ── Room layout config ────────────────────────────────────────────────────────
 

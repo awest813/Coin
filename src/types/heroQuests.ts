@@ -1,5 +1,4 @@
 import type { Mercenary } from './mercenary';
-import type { MissionOutcome } from './mission';
 
 export interface HeroQuestStage {
   id: string;

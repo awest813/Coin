@@ -1,6 +1,6 @@
 import type { Mercenary } from '~/types/mercenary';
 import type { Item } from '~/types/item';
-import type { MissionTemplate, MissionResult, MissionOutcome, ScoreBreakdownEntry } from '~/types/mission';
+import type { MissionTemplate, MissionResult, MissionOutcome, ScoreBreakdownEntry, SynergyBonus } from '~/types/mission';
 import type { RoomUpgrade } from '~/types/guild';
 import { ITEMS_MAP } from '~/data/items';
 import { ARTIFACTS_MAP } from '~/data/artifacts';
@@ -153,7 +153,7 @@ export interface SimulationOptions {
   activePolicyIds?: string[];
 }
 
-function computeSynergies(mercs: Mercenary[], template: MissionTemplate): SynergyBonus[] {
+function computeSynergies(mercs: Mercenary[]): SynergyBonus[] {
   const synergies: SynergyBonus[] = [];
   if (mercs.length < 2) return synergies;
 
@@ -205,7 +205,7 @@ export function simulateMission(
     scoreMercDetailed(m, template, partyMercIds)
   );
   
-  const synergies = computeSynergies(mercs, template);
+  const synergies = computeSynergies(mercs);
   const synergyScore = synergies.reduce((sum, s) => sum + s.scoreBonus, 0);
   
   let partyScore = scoreBreakdown.reduce((sum, e) => sum + e.total, 0) + synergyScore;
@@ -316,6 +316,7 @@ export function simulateMission(
   const narrativeEvents = pickEventSnippets(template, outcome, seed, mercs);
 
   return {
+    missionRunId: seed,
     templateId: template.id,
     mercIds: partyMercIds,
     outcome,

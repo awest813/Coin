@@ -1,7 +1,22 @@
-import { useGameStore, getGuildRankName, getNextRankThreshold } from '~/store/gameStore';
-import { GuildScene } from '~/babylon/GuildScene';
+import { useGameStore } from '~/store/gameStore';
+import { getRoomEffect } from '~/simulation/missionSim';
+import { WEATHER_IDS, type WeatherId } from '~/types/guild';
 
-const RANK_THRESHOLDS = [0, 5, 15, 30, 50];
+const FIRE_GLOWS = [
+  { id: 'courtyard-fire', x: '51.5%', y: '43%', size: '112px', delay: '0s' },
+  { id: 'forge-fire', x: '78%', y: '34%', size: '96px', delay: '0.45s' },
+  { id: 'tavern-hearth', x: '34%', y: '64%', size: '82px', delay: '0.9s' },
+  { id: 'front-torches', x: '64%', y: '66%', size: '76px', delay: '1.2s' },
+  { id: 'left-yard-torches', x: '16%', y: '55%', size: '70px', delay: '0.7s' },
+];
+
+const WEATHER_ICON: Record<WeatherId, string> = {
+  clear: '☀️',
+  rain: '🌧️',
+  snow: '❄️',
+  night: '🌙',
+  storm: '⛈️',
+};
 
 export function GuildDashboard() {
   const {
@@ -12,13 +27,15 @@ export function GuildDashboard() {
     setScreen,
     upgradeRoom,
     pendingEvents,
-    dismissEvent,
     resolveEventChoice,
   } = useGameStore();
 
   const availableMercs = mercenaries.filter((m) => !m.isInjured && !m.isFatigued);
   const injuredMercs = mercenaries.filter((m) => m.isInjured);
   const fatiguedMercs = mercenaries.filter((m) => m.isFatigued && !m.isInjured);
+  const currentWeather = WEATHER_IDS.includes(guild.currentWeather)
+    ? guild.currentWeather
+    : 'clear';
 
   function canAffordUpgrade(roomId: string): boolean {
     const room = guild.rooms.find((r) => r.id === roomId);
@@ -36,16 +53,42 @@ export function GuildDashboard() {
       {/* 3-D Diorama Section */}
       <div className="relative group overflow-hidden rounded-[2.5rem] glass-dark border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)]">
         <div className="h-[450px] relative">
-          <div className="absolute inset-0 perspective-grid opacity-20 pointer-events-none" />
-          <GuildScene />
+          <img
+            src="/assets/guild-diorama-pregenerated.png"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            draggable={false}
+          />
+          <div className="diorama-light-layer" aria-hidden="true">
+            {FIRE_GLOWS.map((glow) => (
+              <span
+                key={glow.id}
+                className="diorama-fire-glow"
+                style={{
+                  left: glow.x,
+                  top: glow.y,
+                  width: glow.size,
+                  height: glow.size,
+                  animationDelay: glow.delay,
+                }}
+              />
+            ))}
+          </div>
+          <div
+            className={`diorama-weather-layer diorama-weather-${currentWeather}`}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 z-[3] bg-gradient-to-b from-stone-950/10 via-transparent to-background/80 pointer-events-none" />
+          <div className="absolute inset-0 z-[5] ring-1 ring-inset ring-white/5 pointer-events-none" />
+          <div className="absolute top-4 right-4 z-[4] sm:hidden glass px-3 py-2 rounded-2xl border border-white/5 flex items-center gap-2 shadow-xl pointer-events-auto">
+            <div className="text-xl">{WEATHER_ICON[currentWeather]}</div>
+            <div className="text-[9px] text-white font-bold uppercase tracking-widest">{currentWeather}</div>
+          </div>
           
           {/* Floating UI overlay on Diorama */}
-          <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-background via-background/60 to-transparent flex justify-between items-end pointer-events-none">
+          <div className="absolute inset-x-0 bottom-0 z-[4] p-8 bg-gradient-to-t from-background via-background/60 to-transparent flex justify-between items-end pointer-events-none">
             <div className="pointer-events-auto">
-              <h1 className="text-5xl font-black font-heading text-white mb-3 tracking-tighter flex items-center gap-4 text-glow">
-                <span className="text-primary drop-shadow-[0_0_20px_rgba(251,191,36,0.6)]">🏰</span>
-                {guild.name}
-              </h1>
+              <h1 className="text-[clamp(2.15rem,9vw,3rem)] sm:text-5xl font-black font-heading text-white mb-3 tracking-tighter flex items-end gap-3 sm:gap-4 text-glow leading-[0.92] sm:leading-none"><span className="text-primary drop-shadow-[0_0_20px_rgba(251,191,36,0.6)] shrink-0">&#127984;</span><span className="min-w-0 max-w-[10ch] sm:max-w-none">{guild.name}</span></h1>
               <div className="flex gap-4">
                 <span className="stat-badge bg-primary/20 text-primary border-primary/30">
                   Rank {guild.guildRank} Guild
@@ -56,18 +99,13 @@ export function GuildDashboard() {
               </div>
             </div>
             
-            <div className="flex flex-col items-end gap-3 pointer-events-auto">
+            <div className="hidden sm:flex flex-col items-end gap-3 pointer-events-auto">
                {/* Weather Indicator */}
                <div className="glass px-4 py-2 rounded-2xl border border-white/5 flex items-center gap-3 shadow-xl animate-in fade-in slide-in-from-right-4 duration-1000">
-                  <div className="text-2xl">
-                    {guild.currentWeather === 'clear' ? '☀️' : 
-                     guild.currentWeather === 'rain' ? '🌧️' : 
-                     guild.currentWeather === 'snow' ? '❄️' : 
-                     guild.currentWeather === 'night' ? '🌙' : '⛈️'}
-                  </div>
+                  <div className="text-2xl">{WEATHER_ICON[currentWeather]}</div>
                   <div className="text-right">
                     <div className="text-[8px] text-stone-500 font-black uppercase tracking-[0.2em]">Atmosphere</div>
-                    <div className="text-[10px] text-white font-bold uppercase tracking-widest">{guild.currentWeather}</div>
+                    <div className="text-[10px] text-white font-bold uppercase tracking-widest">{currentWeather}</div>
                   </div>
                </div>
 

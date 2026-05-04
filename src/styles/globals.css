@@ -44,7 +44,7 @@
 
 @layer base {
   * {
-    @apply border-white/5 outline-none selection:bg-primary/20 selection:text-primary;
+    @apply border-white/5 outline-none;
   }
   
   html {
@@ -95,19 +95,49 @@
   }
 
   .premium-card {
-    @apply glass rounded-3xl p-8 transition-all duration-500 ease-out 
-           hover:border-primary/30 hover:bg-white/10 hover:-translate-y-2
-           hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7),0_0_20px_rgba(251,191,36,0.1)]
-           active:scale-[0.97] active:duration-100;
+    background: rgb(255 255 255 / 0.05);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.5);
+    padding: 2rem;
+    transition: transform 500ms ease, background-color 500ms ease, border-color 500ms ease, box-shadow 500ms ease;
+    backdrop-filter: blur(24px);
+  }
+
+  .premium-card:hover {
+    background: rgb(255 255 255 / 0.1);
+    border-color: oklch(0.78 0.16 45 / 0.3);
+    box-shadow: 0 20px 40px -15px rgb(0 0 0 / 0.7), 0 0 20px rgb(251 191 36 / 0.1);
+    transform: translateY(-0.5rem);
+  }
+
+  .premium-card:active {
+    transform: scale(0.97);
+    transition-duration: 100ms;
   }
   
   .premium-button {
-    @apply relative px-8 py-3.5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px]
-           overflow-hidden transition-all duration-500 
-           bg-gradient-to-br from-primary via-orange-500 to-amber-600 text-stone-950
-           shadow-[0_4px_20px_rgba(251,191,36,0.2)]
-           hover:shadow-[0_12px_30px_rgba(251,191,36,0.4)] hover:scale-[1.05]
-           active:scale-[0.95] haptic-click group;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, oklch(0.78 0.16 45), rgb(249 115 22), rgb(217 119 6));
+    color: rgb(28 25 23);
+    box-shadow: 0 4px 20px rgb(251 191 36 / 0.2);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    padding: 0.875rem 2rem;
+    text-transform: uppercase;
+    transition: transform 500ms ease, box-shadow 500ms ease;
+  }
+
+  .premium-button:hover {
+    box-shadow: 0 12px 30px rgb(251 191 36 / 0.4);
+    transform: scale(1.05);
+  }
+
+  .premium-button:active {
+    transform: scale(0.95);
   }
 
   /* Shimmer Effect */
@@ -137,6 +167,112 @@
 
   .loot-pop {
     animation: loot-pop 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .diorama-light-layer,
+  .diorama-weather-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .diorama-light-layer {
+    mix-blend-mode: screen;
+    z-index: 1;
+  }
+
+  .diorama-fire-glow {
+    position: absolute;
+    border-radius: 9999px;
+    background:
+      radial-gradient(circle, rgb(255 245 180 / 0.78) 0%, rgb(255 150 38 / 0.34) 28%, rgb(255 87 34 / 0.16) 52%, transparent 72%);
+    filter: blur(13px) saturate(1.25);
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.92);
+    animation: fire-glow 2.45s ease-in-out infinite;
+  }
+
+  .diorama-fire-glow::after {
+    content: "";
+    position: absolute;
+    inset: 30%;
+    border-radius: inherit;
+    background: rgb(255 236 164 / 0.75);
+    filter: blur(9px);
+    animation: ember-core 1.4s ease-in-out infinite;
+  }
+
+  .diorama-weather-layer {
+    z-index: 2;
+  }
+
+  .diorama-weather-clear {
+    background:
+      radial-gradient(circle at 78% 18%, rgb(255 198 88 / 0.13), transparent 22%),
+      linear-gradient(110deg, transparent 0%, rgb(255 230 170 / 0.08) 48%, transparent 68%);
+    mix-blend-mode: screen;
+  }
+
+  .diorama-weather-night {
+    background:
+      radial-gradient(circle at 50% 42%, transparent 0%, transparent 42%, rgb(5 7 18 / 0.45) 100%),
+      linear-gradient(180deg, rgb(19 28 64 / 0.24), rgb(2 6 18 / 0.54));
+    mix-blend-mode: multiply;
+  }
+
+  .diorama-weather-rain {
+    background:
+      linear-gradient(180deg, rgb(18 30 42 / 0.22), rgb(4 8 12 / 0.28)),
+      repeating-linear-gradient(112deg, transparent 0 14px, rgb(180 220 255 / 0.22) 15px 16px, transparent 17px 34px);
+    background-size: auto, 220px 220px;
+    animation: rain-fall 0.75s linear infinite;
+    mix-blend-mode: screen;
+  }
+
+  .diorama-weather-snow {
+    background-image:
+      radial-gradient(circle, rgb(255 255 255 / 0.85) 0 1.5px, transparent 2px),
+      radial-gradient(circle, rgb(255 255 255 / 0.45) 0 1px, transparent 1.8px),
+      linear-gradient(180deg, rgb(210 230 255 / 0.12), rgb(255 255 255 / 0.04));
+    background-position: 0 0, 70px 30px, 0 0;
+    background-size: 140px 140px, 190px 190px, auto;
+    animation: snow-drift 7s linear infinite;
+    mix-blend-mode: screen;
+  }
+
+  .diorama-weather-storm {
+    background:
+      linear-gradient(180deg, rgb(8 12 22 / 0.55), rgb(3 5 12 / 0.42)),
+      repeating-linear-gradient(110deg, transparent 0 10px, rgb(190 220 255 / 0.26) 11px 12px, transparent 13px 28px);
+    background-size: auto, 190px 190px;
+    animation: rain-fall 0.48s linear infinite;
+    mix-blend-mode: screen;
+  }
+
+  .diorama-weather-storm::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 66% 20%, rgb(210 230 255 / 0.8), transparent 28%);
+    opacity: 0;
+    animation: lightning-flash 5.8s step-end infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .diorama-fire-glow,
+    .diorama-fire-glow::after,
+    .diorama-weather-rain,
+    .diorama-weather-snow,
+    .diorama-weather-storm,
+    .diorama-weather-storm::after {
+      animation: none;
+    }
+
+    .diorama-fire-glow {
+      opacity: 0.62;
+      transform: translate(-50%, -50%) scale(1);
+    }
   }
 }
 
@@ -172,6 +308,43 @@
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.5; filter: blur(5px); }
   50% { opacity: 1; filter: blur(10px); }
+}
+
+@keyframes fire-glow {
+  0%, 100% {
+    opacity: 0.58;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  38% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  62% {
+    opacity: 0.68;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+}
+
+@keyframes ember-core {
+  0%, 100% { opacity: 0.3; transform: scale(0.7); }
+  50% { opacity: 0.75; transform: scale(1.12); }
+}
+
+@keyframes rain-fall {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 0, -70px 220px; }
+}
+
+@keyframes snow-drift {
+  from { background-position: 0 0, 70px 30px, 0 0; }
+  to { background-position: 55px 220px, 10px 250px, 0 0; }
+}
+
+@keyframes lightning-flash {
+  0%, 91%, 95%, 100% { opacity: 0; }
+  92% { opacity: 0.58; }
+  93% { opacity: 0.05; }
+  94% { opacity: 0.38; }
 }
 
 .animate-shimmer { animation: shimmer 2s infinite; }

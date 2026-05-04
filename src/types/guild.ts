@@ -1,3 +1,8 @@
+import type { ChronicleEntry } from './chronicles';
+
+export const WEATHER_IDS = ['clear', 'rain', 'snow', 'night', 'storm'] as const;
+export type WeatherId = (typeof WEATHER_IDS)[number];
+
 export interface GuildResources {
   gold: number;
   supplies: number;
@@ -84,8 +89,8 @@ export interface Guild {
   regionalInfluence: Record<string, RegionalInfluence>; // region name -> data
   unlockedArtifactIds: string[];
   unlockedPropIds: string[];
-  currentWeather: string;
-  chronicles: any[];
+  currentWeather: WeatherId;
+  chronicles: ChronicleEntry[];
   activePolicyIds: GuildPolicyId[];
   maxPolicySlots: number;
 }

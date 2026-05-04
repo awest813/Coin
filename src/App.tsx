@@ -17,6 +17,7 @@ import { ResultsModal } from '~/components/ResultsModal';
 import { OfflineModal } from '~/components/OfflineModal';
 import { MainMenu } from '~/components/MainMenu';
 import { HeroQuestModal } from '~/components/HeroQuestModal';
+import { WEATHER_IDS } from '~/types/guild';
 
 function App() {
   const { activeScreen, isInMainMenu, setInMainMenu, tick, calculateOfflineProgress } = useGameStore();
@@ -33,6 +34,51 @@ function App() {
       clearTimeout(timer);
     };
   }, [tick, calculateOfflineProgress]);
+
+  useEffect(() => {
+    window.render_game_to_text = () => {
+      const state = useGameStore.getState();
+      return JSON.stringify({
+        coordinateSystem: 'React UI plus Babylon guild diorama; screen origin is top-left in CSS pixels.',
+        mode: state.isInMainMenu ? 'main_menu' : 'guild',
+        activeScreen: state.activeScreen,
+        guild: {
+          name: state.guild.name,
+          rank: state.guild.guildRank,
+          resources: state.guild.resources,
+          completedContracts: state.guild.completedContracts,
+          weather: WEATHER_IDS.includes(state.guild.currentWeather)
+            ? state.guild.currentWeather
+            : 'clear',
+        },
+        activeMissions: state.activeMissions.map((mission) => ({
+          id: mission.missionRunId,
+          templateId: mission.templateId,
+          assignedMercIds: mission.assignedMercIds,
+          endTime: mission.endTime,
+        })),
+        roster: {
+          total: state.mercenaries.length,
+          ready: state.mercenaries.filter((merc) => !merc.isInjured && !merc.isFatigued).length,
+          injured: state.mercenaries.filter((merc) => merc.isInjured).length,
+          fatigued: state.mercenaries.filter((merc) => merc.isFatigued && !merc.isInjured).length,
+        },
+        pendingEvents: state.pendingEvents.length,
+      });
+    };
+
+    window.advanceTime = (ms: number) => {
+      const steps = Math.max(1, Math.round(ms / 1000));
+      for (let i = 0; i < steps; i++) {
+        useGameStore.getState().tick();
+      }
+    };
+
+    return () => {
+      delete window.render_game_to_text;
+      delete window.advanceTime;
+    };
+  }, []);
 
   // Handle Escape to Menu
   useEffect(() => {

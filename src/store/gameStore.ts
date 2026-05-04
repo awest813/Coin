@@ -3,10 +3,12 @@ import { persist } from 'zustand/middleware';
 import type { Mercenary, EquipmentSlot } from '~/types/mercenary';
 import type { Item } from '~/types/item';
 import type { ActiveMission, MissionResult } from '~/types/mission';
-import type { Guild, RoomUpgrade } from '~/types/guild';
+import { WEATHER_IDS, type AutomationSettings, type Guild, type GuildPolicyId, type RoomUpgrade, type WeatherId } from '~/types/guild';
+import type { MercStats } from '~/types/mercenary';
 import type { GeneratedRecruit } from '~/types/recruit';
 import type { PendingEvent } from '~/types/event';
 import type { ActiveExpedition, ExpeditionResult } from '~/types/expedition';
+import type { ChronicleEntry } from '~/types/chronicles';
 import { SAVE_VERSION } from '~/types/save';
 import { INITIAL_MERCENARIES } from '~/data/mercenaries';
 import { ITEMS_MAP } from '~/data/items';
@@ -19,12 +21,11 @@ import { simulateMission } from '~/simulation/missionSim';
 import { MISSION_TEMPLATES } from '~/data/missions';
 import { RECIPES } from '~/data/recipes';
 import { buildDefaultInfluence, REGION_DATA, computeUnlockedPerks, INFLUENCE_PER_OUTCOME, getAllActivePerks } from '~/data/regions';
-import { ARTIFACTS, ARTIFACTS_MAP } from '~/data/artifacts';
+import { ARTIFACTS_MAP } from '~/data/artifacts';
 import { HERO_QUESTS } from '~/data/heroQuests';
 import { LEGENDARY_MERCENARIES } from '~/data/legendaryMercs';
 import { DIORAMA_PROPS } from '~/types/customization';
-import type { HeroQuest, HeroQuestStage } from '~/types/heroQuests';
-import type { InfluencePerkId } from '~/types/guild';
+import type { HeroQuest } from '~/types/heroQuests';
 
 export type ActiveScreen =
   | 'dashboard'
@@ -131,9 +132,9 @@ interface GameState {
   completeHeroQuest: (questId: string) => void;
   // customization
   unlockProp: (propId: string) => void;
-  setWeather: (weather: string) => void;
+  setWeather: (weather: WeatherId) => void;
   // chronicles
-  addChronicleEntry: (entry: any) => void;
+  addChronicleEntry: (entry: ChronicleEntry) => void;
   // events
   dismissEvent: (eventId: string) => void;
   resolveEventChoice: (eventId: string, choiceIndex: number) => void;
@@ -397,7 +398,7 @@ export const useGameStore = create<GameState>()(
           finalGoldEarned = Math.floor(finalGoldEarned * (1 + goldMod));
 
           // Apply perk: ashfen_scouts → +1 loot on exploration/ruin
-          let finalItemsEarned = [...result.itemsEarned];
+          const finalItemsEarned = [...result.itemsEarned];
           if (activePerks.has('ashfen_scouts') && template?.tags.some(t => ['exploration', 'ruin'].includes(t))) {
             if (template?.reward.possibleItems.length) {
               const bonus = template.reward.possibleItems[Math.floor(Math.random() * template.reward.possibleItems.length)];
@@ -445,7 +446,6 @@ export const useGameStore = create<GameState>()(
           );
           const updatedMercenariesWithBonds = applyBondChanges(state.mercenaries, bondChanges);
 
-          const activeArtifacts = state.guild.unlockedArtifactIds.map(id => ARTIFACTS_MAP[id]).filter(Boolean);
           const barracksRoom = state.guild.rooms.find((r) => r.id === 'room_barracks');
           let recoveryBonus = barracksRoom?.levels[barracksRoom.level - 1]?.effects?.recoveryBonus ?? 0;
           
@@ -557,11 +557,20 @@ export const useGameStore = create<GameState>()(
             chronicles: chronicles.slice(0, 100),
           };
 
+          const newEvents = generateGuildEvents(
+            mercenaries,
+            resources.renown,
+            'mission_complete',
+            result.missionRunId,
+            state.guild.name,
+            1
+          );
+
           // Store bond changes on result for display
           const enrichedResult = {
             ...result,
             bondChanges,
-            suppliesEarned,
+            suppliesEarned: baseSupplies,
           };
 
           return {
@@ -573,7 +582,7 @@ export const useGameStore = create<GameState>()(
             ),
             lastResult: enrichedResult as MissionResult,
             showResultModal: true,
-            pendingEvents,
+            pendingEvents: [...state.pendingEvents, ...newEvents].slice(0, 3),
             activeHeroQuest,
           };
         }),
@@ -970,7 +979,8 @@ export const useGameStore = create<GameState>()(
             const { guildRank, unlockedRegions } = computeProgression(
               completedContracts,
               resources.renown,
-              state.guild.unlockedRegions
+              state.guild.unlockedRegions,
+              state.completedHeroQuestIds
             );
 
             // Apply bond changes; resting mercs recover fatigue
@@ -1119,7 +1129,7 @@ export const useGameStore = create<GameState>()(
           let finalMissions = [...state.activeMissions];
           let autoRewardsGold = 0;
           let autoRewardsRenown = 0;
-          let autoRewardsLoot: string[] = [];
+          const autoRewardsLoot: string[] = [];
 
           if (state.guild.automationSettings.autoDeploy && state.guild.guildRank >= 4) {
             // 1. Auto-Claim finished missions
@@ -1172,7 +1182,7 @@ export const useGameStore = create<GameState>()(
                 if (idleMercs.length >= 1) {
                   const partyIds = idleMercs.slice(0, 2).map(m => m.id);
                   const autoConsumables: string[] = [];
-                  let currentInventory = [...state.guild.inventoryItemIds, ...autoRewardsLoot];
+                  const currentInventory = [...state.guild.inventoryItemIds, ...autoRewardsLoot];
 
                   if (state.guild.automationSettings.autoRefill && state.guild.guildRank >= 5) {
                     const rationsIdx = currentInventory.indexOf('road_rations');
@@ -1256,10 +1266,10 @@ export const useGameStore = create<GameState>()(
         const steps = Math.min(100, Math.ceil(cappedDelta / 300)); // Simulate in 5-min chunks max 100 steps
         const stepDelta = cappedDelta / steps;
 
-        let currentResources = { ...state.guild.resources };
-        let currentMercs = [...state.mercenaries];
+        const currentResources = { ...state.guild.resources };
+        const currentMercs = [...state.mercenaries];
         let currentMissions = [...state.activeMissions];
-        let currentInventory = [...state.guild.inventoryItemIds];
+        const currentInventory = [...state.guild.inventoryItemIds];
         let totalMissionsCompleted = 0;
 
         const tavern = state.guild.rooms.find(r => r.id === 'room_tavern');
@@ -1392,28 +1402,6 @@ export const useGameStore = create<GameState>()(
           ...defaultState(),
         }),
 
-      sellItem: (itemId) => set(state => {
-        const item = state.items[itemId];
-        if (!item) return {};
-        const sellValue = Math.floor((item.goldCost || 20) / 2);
-        const idx = state.guild.inventoryItemIds.indexOf(itemId);
-        if (idx === -1) return {};
-        
-        const newInventory = [...state.guild.inventoryItemIds];
-        newInventory.splice(idx, 1);
-        
-        return {
-          guild: {
-            ...state.guild,
-            inventoryItemIds: newInventory,
-            resources: {
-              ...state.guild.resources,
-              gold: state.guild.resources.gold + sellValue
-            }
-          }
-        };
-      }),
-
       forgeArtifact: (artifactId) => set(state => {
         const artifact = ARTIFACTS_MAP[artifactId];
         if (!artifact) return {};
@@ -1466,7 +1454,7 @@ export const useGameStore = create<GameState>()(
           return {
             ...m,
             isTraining: isNowTraining,
-            trainingStat: stat ?? m.trainingStat ?? 'strength',
+            trainingStat: (stat ?? m.trainingStat ?? 'strength') as keyof MercStats,
             trainingProgress: isNowTraining ? (m.trainingProgress ?? 0) : m.trainingProgress
           };
         })
@@ -1478,7 +1466,7 @@ export const useGameStore = create<GameState>()(
         const rewardMerc = LEGENDARY_MERCENARIES[quest.rewardMercenaryId];
         if (!rewardMerc) return {};
 
-        const entry = {
+        const entry: ChronicleEntry = {
           id: `chronicle_${Date.now()}`,
           timestamp: new Date().toISOString(),
           type: 'hero_unlock',
@@ -1536,7 +1524,7 @@ export const useGameStore = create<GameState>()(
           const rewardMerc = LEGENDARY_MERCENARIES[quest.rewardMercenaryId];
           if (!rewardMerc) return { activeHeroQuest: null, activeHeroQuestStageId: null };
 
-          const entry = {
+          const entry: ChronicleEntry = {
             id: `chronicle_${Date.now()}`,
             timestamp: new Date().toISOString(),
             type: 'hero_unlock',
@@ -1573,7 +1561,10 @@ export const useGameStore = create<GameState>()(
       }),
 
       setWeather: (weather) => set(state => ({
-        guild: { ...state.guild, currentWeather: weather }
+        guild: {
+          ...state.guild,
+          currentWeather: WEATHER_IDS.includes(weather) ? weather : 'clear',
+        }
       })),
 
       addChronicleEntry: (entry) => set(state => ({
@@ -1662,8 +1653,9 @@ export const useGameStore = create<GameState>()(
           const guild = state.guild as Record<string, unknown> | undefined;
           if (guild) {
             guild.unlockedPropIds = (guild.unlockedPropIds as string[] | undefined) ?? [];
-            guild.currentWeather = (guild.currentWeather as string | undefined) ?? 'clear';
-            guild.chronicles = (guild.chronicles as any[] | undefined) ?? [];
+            const savedWeather = guild.currentWeather as string | undefined;
+            guild.currentWeather = WEATHER_IDS.includes(savedWeather as WeatherId) ? savedWeather : 'clear';
+            guild.chronicles = (guild.chronicles as ChronicleEntry[] | undefined) ?? [];
           }
         }
         return state;

@@ -80,4 +80,6 @@ export interface MissionResult {
   scoreBreakdown: ScoreBreakdownEntry[];
   synergies?: SynergyBonus[];
   narrativeEvents: string[];
+  /** Optional material drops keyed by material ID, added by mission resolution UI */
+  materialsEarned?: Record<string, number>;
 }

@@ -18,10 +18,6 @@ const TAG_MATERIAL_HINTS: Record<string, string> = {
 
 type AssignStep = 'mercs' | 'consumables';
 
-function pluralize(count: number, singular: string, plural: string): string {
-  return count === 1 ? `${count} ${singular}` : `${count} ${plural}`;
-}
-
 export function MissionBoard() {
   const { mercenaries, activeMissions, addActiveMission, applyMissionResult, guild, items } =
     useGameStore();
@@ -65,6 +61,7 @@ export function MissionBoard() {
       templateId: selectedMission.id,
       assignedMercIds: selectedMercIds,
       startedAt: new Date().toISOString(),
+      endTime: new Date().toISOString(),
       consumablesAssigned: selectedConsumables,
     });
     setSelectedMission(null);

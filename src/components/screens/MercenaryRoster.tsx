@@ -369,6 +369,12 @@ export function MercenaryRoster() {
                 </div>
               </div>
 
+              {selectedLive && inventoryItems.length === 0 && (
+                <p className="text-stone-600 text-xs mt-4 italic text-center">
+                  No items in inventory to equip. Complete missions to earn loot.
+                </p>
+              )}
+
               {/* Item picker overlay logic */}
               {equipSlot && (
                 <div className="glass rounded-[2rem] border-primary/30 p-8 shadow-2xl animate-in zoom-in-95 duration-300">
@@ -410,16 +416,6 @@ export function MercenaryRoster() {
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
-}
-
-      {/* Empty inventory notice when trying to equip */}
-      {selectedLive && inventoryItems.length === 0 && (
-        <p className="text-stone-600 text-xs mt-4 italic text-center">
-          No items in inventory to equip. Complete missions to earn loot.
-        </p>
       )}
     </div>
   );

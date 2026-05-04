@@ -1,5 +1,4 @@
 import { useGameStore } from '~/store/gameStore';
-import { bondScoreToSentiment } from '~/simulation/bondSim';
 import type { GeneratedRecruit } from '~/types/recruit';
 
 function StatBar({ label, value }: { label: string; value: number }) {
