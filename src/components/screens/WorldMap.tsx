@@ -129,6 +129,8 @@ export function WorldMap() {
     grey_mountains: { top: '20%', left: '55%' },
     city_below: { top: '55%', left: '75%' },
     pale_border: { top: '15%', left: '85%' },
+    whispering_peaks: { top: '35%', left: '90%' },
+    sovereign_keep: { top: '50%', left: '50%' },
   };
 
   return (
@@ -139,7 +141,7 @@ export function WorldMap() {
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Strategic Intelligence Hub</span>
           </div>
-          <h1 className="text-6xl font-black font-heading text-white tracking-tighter text-glow">
+          <h1 className="text-6xl font-black font-heading text-white tracking-tighter metallic-gold">
             Continental Influence
           </h1>
           <p className="text-stone-500 max-w-xl italic font-serif text-lg leading-relaxed">

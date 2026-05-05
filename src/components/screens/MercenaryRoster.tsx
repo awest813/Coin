@@ -4,6 +4,7 @@ import { MercCard } from '~/components/MercCard';
 import { ItemCard } from '~/components/ItemCard';
 import { bondScoreToSentiment } from '~/simulation/bondSim';
 import type { Mercenary, EquipmentSlot } from '~/types/mercenary';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const SLOTS: { slot: EquipmentSlot; label: string; icon: string }[] = [
   { slot: 'weapon', label: 'Weapon', icon: '⚔️' },
@@ -39,6 +40,8 @@ export function MercenaryRoster() {
   const { mercenaries, items, guild, equipItem, unequipItem, restMercenary, repairItem } = useGameStore();
   const [selected, setSelected] = useState<Mercenary | null>(null);
   const [equipSlot, setEquipSlot] = useState<EquipmentSlot | null>(null);
+  const [filter, setFilter] = useState<'all' | 'ready' | 'injured' | 'legendary'>('all');
+  const [sort, setSort] = useState<'name' | 'strength' | 'agility' | 'intellect' | 'presence'>('name');
 
   // Keep selected in sync with store updates
   const selectedLive = selected ? mercenaries.find((m) => m.id === selected.id) ?? null : null;
@@ -71,6 +74,18 @@ export function MercenaryRoster() {
         })
     : [];
 
+  const displayMercs = mercenaries
+    .filter(m => {
+      if (filter === 'ready') return !m.isInjured && !m.isFatigued;
+      if (filter === 'injured') return m.isInjured;
+      if (filter === 'legendary') return m.isLegendary;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sort === 'name') return a.name.localeCompare(b.name);
+      return b.stats[sort] - a.stats[sort];
+    });
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -89,18 +104,57 @@ export function MercenaryRoster() {
         </div>
       </header>
 
+      {/* Controls */}
+      <section className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-black/20 p-4 rounded-3xl border border-white/5">
+        <div className="flex gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
+          {(['all', 'ready', 'injured', 'legendary'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === f ? 'bg-primary text-stone-950 shadow-lg shadow-primary/20' : 'text-stone-500 hover:text-stone-300'}`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <span className="text-[10px] font-black text-stone-600 uppercase tracking-widest">Sort By</span>
+          <select 
+            value={sort}
+            onChange={(e) => setSort(e.target.value as any)}
+            className="bg-black/40 border border-white/5 rounded-xl px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary focus:border-primary/50 outline-none transition-all"
+          >
+            <option value="name">Name</option>
+            <option value="strength">Strength</option>
+            <option value="agility">Agility</option>
+            <option value="intellect">Intellect</option>
+            <option value="presence">Presence</option>
+          </select>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {mercenaries.map((merc) => (
-          <MercCard
+        <AnimatePresence mode="popLayout">
+        {displayMercs.map((merc) => (
+          <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
             key={merc.id}
-            merc={merc}
-            selected={selectedLive?.id === merc.id}
-            onClick={() => {
-              setSelected(selectedLive?.id === merc.id ? null : merc);
-              setEquipSlot(null);
-            }}
-          />
+          >
+            <MercCard
+              merc={merc}
+              selected={selectedLive?.id === merc.id}
+              onClick={() => {
+                setSelected(selectedLive?.id === merc.id ? null : merc);
+                setEquipSlot(null);
+              }}
+            />
+          </motion.div>
         ))}
+        </AnimatePresence>
       </div>
 
       {selectedLive && (

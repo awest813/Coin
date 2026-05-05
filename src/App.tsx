@@ -24,6 +24,23 @@ import { MainMenu } from '~/components/MainMenu';
 import { VictoryScreen } from '~/components/VictoryScreen';
 import { WEATHER_IDS } from '~/types/guild';
 
+const Embers = () => (
+  <div className="embers-overlay">
+    {[...Array(30)].map((_, i) => (
+      <div 
+        key={i} 
+        className="ember" 
+        style={{ 
+          left: `${Math.random() * 100}%`,
+          '--duration': `${10 + Math.random() * 15}s`,
+          '--x-drift': `${(Math.random() - 0.5) * 400}px`,
+          animationDelay: `${Math.random() * -20}s`
+        } as any} 
+      />
+    ))}
+  </div>
+);
+
 function App() {
   const { activeScreen, isInMainMenu, setInMainMenu, tick, calculateOfflineProgress, campaignStage } = useGameStore();
 
@@ -99,6 +116,7 @@ function App() {
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 selection:bg-primary/20 selection:text-primary/80 relative">
       <div className="noise-overlay" />
+      <Embers />
       
       {isInMainMenu && <MainMenu />}
       

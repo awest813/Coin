@@ -1,6 +1,7 @@
 import { useGameStore } from '~/store/gameStore';
 import type { ActiveScreen } from '~/store/gameStore';
 import { getAllActivePerks } from '~/data/regions';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const NAV_ITEMS: { id: ActiveScreen; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Guild Hall', icon: '🏰' },
@@ -73,7 +74,7 @@ export function NavBar() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex bg-black/60 p-2 rounded-2xl border border-white/5 gap-1.5 overflow-x-auto no-scrollbar max-w-full glass-dark">
+        <div className="flex bg-black/60 p-2 rounded-[2rem] border border-white/5 gap-1.5 overflow-x-auto no-scrollbar max-w-full glass-dark">
           {NAV_ITEMS.map((item) => {
             const unlockRank = getFeatureUnlockRank(item.id);
             const isLocked = guild.guildRank < unlockRank;
@@ -90,23 +91,30 @@ export function NavBar() {
                 key={item.id}
                 onClick={() => !isLocked && setScreen(item.id)}
                 disabled={isLocked}
-                className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all whitespace-nowrap flex items-center gap-2.5 haptic-click relative ${
+                className={`px-5 py-2.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] transition-all whitespace-nowrap flex items-center gap-2.5 haptic-click relative group ${
                   isActive 
-                  ? 'bg-primary text-stone-950 shadow-[0_4px_15px_rgba(251,191,36,0.3)] scale-[1.02]' 
+                  ? 'text-stone-950 scale-[1.02]' 
                   : isLocked
                     ? 'text-stone-700 cursor-not-allowed grayscale'
                     : 'text-stone-500 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <span className="text-base icon-premium">{item.icon}</span>
-                <span className="hidden lg:inline">{item.label}</span>
+                {isActive && (
+                  <motion.div 
+                    layoutId="nav-active-pill"
+                    className="absolute inset-0 bg-primary rounded-2xl shadow-[0_8px_20px_rgba(251,191,36,0.3)]"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className={`text-base icon-premium relative z-10 ${isActive ? 'text-stone-950' : ''}`}>{item.icon}</span>
+                <span className="hidden lg:inline relative z-10">{item.label}</span>
                 {showBadge && !isLocked && (
-                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-stone-950 animate-pulse flex items-center justify-center shadow-[0_0_8px_rgba(251,191,36,0.6)]">
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-stone-950 animate-pulse flex items-center justify-center shadow-[0_0_8px_rgba(251,191,36,0.6)] z-20">
                     <span className="w-1.5 h-1.5 bg-stone-950 rounded-full" />
                   </span>
                 )}
                 {isLocked && (
-                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-stone-900 rounded-full border-2 border-stone-950 flex items-center justify-center text-[8px]">🔒</span>
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-stone-900 rounded-full border-2 border-stone-950 flex items-center justify-center text-[8px] z-20">🔒</span>
                 )}
               </button>
             );

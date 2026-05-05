@@ -2,6 +2,7 @@ import { useGameStore } from '~/store/gameStore';
 import { getRoomEffect } from '~/simulation/missionSim';
 import { WEATHER_IDS, type WeatherId } from '~/types/guild';
 import { ITEMS_MAP } from '~/data/items';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 const FIRE_GLOWS = [
   { id: 'courtyard-fire', x: '51.5%', y: '43%', size: '112px', delay: '0s' },
@@ -41,7 +42,12 @@ export function GuildDashboard() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+      className="p-6 max-w-6xl mx-auto space-y-8"
+    >
       {/* 3-D Diorama Section */}
       <div className="relative group overflow-hidden rounded-[2.5rem] glass-dark border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)]">
         <div className="h-[450px] relative">
@@ -80,7 +86,10 @@ export function GuildDashboard() {
           {/* Floating UI overlay on Diorama */}
           <div className="absolute inset-x-0 bottom-0 z-[4] p-8 bg-gradient-to-t from-background via-background/60 to-transparent flex justify-between items-end pointer-events-none">
             <div className="pointer-events-auto">
-              <h1 className="text-[clamp(2.15rem,9vw,3rem)] sm:text-5xl font-black font-heading text-white mb-3 tracking-tighter flex items-end gap-3 sm:gap-4 text-glow leading-[0.92] sm:leading-none"><span className="text-primary drop-shadow-[0_0_20px_rgba(251,191,36,0.6)] shrink-0">&#127984;</span><span className="min-w-0 max-w-[10ch] sm:max-w-none">{guild.name}</span></h1>
+              <h1 className="text-[clamp(2.15rem,9vw,3rem)] sm:text-5xl font-black font-heading text-white mb-3 tracking-tighter flex items-end gap-3 sm:gap-4 leading-[0.92] sm:leading-none">
+                <span className="text-primary drop-shadow-[0_0_20px_rgba(251,191,36,0.6)] shrink-0">&#127984;</span>
+                <span className="min-w-0 max-w-[10ch] sm:max-w-none metallic-gold">{guild.name}</span>
+              </h1>
               <div className="flex gap-4">
                 <span className="stat-badge bg-primary/20 text-primary border-primary/30">
                   Rank {guild.guildRank} Guild
@@ -112,7 +121,8 @@ export function GuildDashboard() {
       </div>
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <LayoutGroup>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { 
             label: 'Gold', 
@@ -147,32 +157,39 @@ export function GuildDashboard() {
             glow: guild.guildMorale >= 80 ? 'shadow-amber-500/20' : guild.guildMorale < 30 ? 'shadow-rose-500/20' : 'shadow-stone-500/20',
             moraleLabel: guild.guildMorale >= 80 ? 'High' : guild.guildMorale < 30 ? 'Low' : 'Steady',
           },
-        ].map((r) => {
           const moraleLabel = 'moraleLabel' in r ? (r as { moraleLabel: string }).moraleLabel : null;
           return (
-          <div key={r.label} className={`premium-card group shadow-2xl ${r.glow} shimmer-effect`}>
+          <motion.div 
+            layout
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            key={r.label} 
+            className={`premium-card group shadow-2xl ${r.glow} shimmer-effect`}
+          >
             <div className="flex justify-between items-start mb-4">
               <div className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-500">{r.icon}</div>
               {r.rate !== undefined && (
                 <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  +{r.rate.toFixed(2)}/s
+                  {r.rate >= 0 ? '+' : ''}{r.rate.toFixed(2)}/s
                 </span>
               )}
             </div>
             <div className={`text-3xl font-bold font-sans mb-1 ${r.color}`}>
               {r.value}
             </div>
-            <div className="text-stone-500 text-xs uppercase tracking-widest font-semibold">{r.label}</div>
+            <div className="text-stone-500 text-[10px] uppercase tracking-[0.2em] font-black">{r.label}</div>
             
             {moraleLabel && (
               <div className="mt-4 space-y-1.5">
                 <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-                  <div 
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${r.value}%` }}
                     className={`h-full rounded-full transition-all duration-1000 ${r.color.replace('text-', 'bg-')}`} 
-                    style={{ width: `${r.value}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[9px] text-stone-500 font-medium">
+                <div className="flex justify-between text-[9px] text-stone-500 font-medium uppercase tracking-tighter">
                   <span>{moraleLabel}</span>
                   <span>100 max</span>
                 </div>
@@ -182,21 +199,23 @@ export function GuildDashboard() {
             {r.cap !== undefined && (
               <div className="mt-4 space-y-1.5">
                 <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-                  <div 
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, (Number(r.value.toString().replace('g', '')) / r.cap!) * 100)}%` }}
                     className={`h-full rounded-full transition-all duration-1000 ${r.color.replace('text-', 'bg-')}`} 
-                    style={{ width: `${Math.min(100, (Number(r.value.toString().replace('g', '')) / r.cap!) * 100)}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[9px] text-stone-500 font-medium">
+                <div className="flex justify-between text-[9px] text-stone-500 font-medium uppercase tracking-tighter">
                   <span>Capacity</span>
-                  <span>{r.cap} max</span>
+                  <span>{r.cap.toLocaleString()} max</span>
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
         );
         })}
       </div>
+      </LayoutGroup>
 
       {/* Consumable Stockpile */}
       {Object.keys(guild.consumableStockpile).length > 0 && (

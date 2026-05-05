@@ -74,6 +74,25 @@
     z-index: 100;
     mix-blend-mode: overlay;
   }
+
+  /* Atmospheric Embers */
+  .embers-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    overflow: hidden;
+  }
+  
+  .ember {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: oklch(0.78 0.16 45 / 0.6);
+    border-radius: 50%;
+    filter: blur(1px);
+    animation: floating-ember var(--duration) ease-in-out infinite;
+  }
   
   h1, h2, h3, h4 {
     @apply font-heading tracking-[0.1em] font-bold;
@@ -82,6 +101,22 @@
   .font-flavor {
     font-family: var(--font-flavor);
     @apply italic leading-relaxed;
+  }
+
+  /* Premium Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-black/40;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-primary/50 transition-colors;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px oklch(0.78 0.16 45 / 0.4);
   }
 }
 
@@ -140,6 +175,30 @@
     transform: scale(0.95);
   }
 
+  .weathered-panel {
+    @apply relative overflow-hidden bg-stone-900/40 backdrop-blur-2xl border border-white/10;
+    background-image: 
+      radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.4) 100%),
+      url('https://www.transparenttextures.com/patterns/natural-paper.png');
+    box-shadow: 
+      inset 0 0 100px rgba(0,0,0,0.5),
+      0 30px 60px -12px rgba(0,0,0,0.8);
+  }
+
+  .metallic-gold {
+    @apply font-heading font-black text-transparent bg-clip-text;
+    background-image: linear-gradient(
+      to bottom,
+      #fef3c7 0%,
+      #fbbf24 45%,
+      #d97706 50%,
+      #b45309 100%
+    );
+    filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4));
+    animation: gold-shimmer 8s infinite linear;
+    background-size: 200% auto;
+  }
+
   /* Shimmer Effect */
   .shimmer-effect {
     @apply relative overflow-hidden;
@@ -159,6 +218,32 @@
   .stat-badge {
     @apply flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 
            text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/10 hover:border-white/20;
+  }
+
+  .gold-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-b from-primary via-primary/80 to-primary/50 drop-shadow-sm;
+  }
+
+  .holographic {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .holographic::before {
+    content: '';
+    position: absolute;
+    inset: -100%;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 45%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.05) 55%,
+      transparent 100%
+    );
+    transform: rotate(-45deg);
+    animation: holo-shimmer 4s infinite linear;
+    pointer-events: none;
   }
 
   .haptic-click {
@@ -310,6 +395,11 @@
   50% { opacity: 1; filter: blur(10px); }
 }
 
+@keyframes holo-shimmer {
+  0% { transform: translate(-50%, -50%) rotate(-45deg); }
+  100% { transform: translate(50%, 50%) rotate(-45deg); }
+}
+
 @keyframes fire-glow {
   0%, 100% {
     opacity: 0.58;
@@ -383,4 +473,27 @@
     linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+}
+
+@keyframes gold-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes floating-ember {
+  0% { transform: translate(0, 100vh) scale(1); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { transform: translate(var(--x-drift), -20vh) scale(0.5); opacity: 0; }
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(2px, -2px); }
+  75% { transform: translate(-2px, -2px); }
+}
+
+.animate-shake {
+  animation: screen-shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
 }
