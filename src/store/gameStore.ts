@@ -115,6 +115,7 @@ interface GameState {
   updateMercenary: (merc: Mercenary) => void;
   equipItem: (mercId: string, slot: EquipmentSlot, itemId: string) => void;
   unequipItem: (mercId: string, slot: EquipmentSlot) => void;
+  restMercenary: (mercId: string) => void;
   // inventory management
   sellItem: (itemId: string) => void;
   // guild management
@@ -133,6 +134,9 @@ interface GameState {
   // customization
   unlockProp: (propId: string) => void;
   setWeather: (weather: WeatherId) => void;
+  // stockpile
+  depositToStockpile: (itemId: string) => void;
+  withdrawFromStockpile: (itemId: string) => void;
   // chronicles
   addChronicleEntry: (entry: ChronicleEntry) => void;
   // events
@@ -249,6 +253,8 @@ const defaultGuild = (): Guild => ({
   chronicles: [],
   activePolicyIds: [],
   maxPolicySlots: 1,
+  guildMorale: 50,
+  consumableStockpile: {},
 });
 
 const defaultState = () => ({
@@ -545,6 +551,14 @@ export const useGameStore = create<GameState>()(
              }
           }
 
+          // Guild Morale update based on mission outcome
+          let moraleDelta = result.outcome === 'success' ? 1 : result.outcome === 'failure' ? -3 : 0;
+          // Policy: profit_maximization → additional morale decay on failure
+          if (state.guild.activePolicyIds.includes('profit_maximization') && result.outcome === 'failure') {
+            moraleDelta -= 2;
+          }
+          const newGuildMorale = Math.max(0, Math.min(100, state.guild.guildMorale + moraleDelta));
+
           const newGuild: Guild = {
             ...state.guild,
             resources,
@@ -555,6 +569,7 @@ export const useGameStore = create<GameState>()(
             unlockedRegions,
             regionalInfluence: updatedRegionalInfluence,
             chronicles: chronicles.slice(0, 100),
+            guildMorale: newGuildMorale,
           };
 
           const newEvents = generateGuildEvents(
@@ -643,6 +658,45 @@ export const useGameStore = create<GameState>()(
           };
         }),
 
+      restMercenary: (mercId) =>
+        set((state) => {
+          const merc = state.mercenaries.find((m) => m.id === mercId);
+          if (!merc || (!merc.isInjured && !merc.isFatigued)) return {};
+
+          const tavern = state.guild.rooms.find(r => r.id === 'room_tavern');
+          const tavernLevel = tavern?.level ?? 1;
+          const baseCost = merc.isInjured ? 30 : 15;
+          const cost = Math.floor(baseCost * (1 + (tavernLevel - 1) * 0.5));
+          const suppliesCost = merc.isInjured ? 10 : 5;
+
+          if (state.guild.resources.gold < cost || state.guild.resources.supplies < suppliesCost) {
+            return {};
+          }
+
+          const newMorale = Math.min(10, merc.morale + 2);
+          const updatedMerc = {
+            ...merc,
+            isInjured: false,
+            isFatigued: false,
+            morale: newMorale,
+          };
+
+          const newGuildMorale = Math.min(100, state.guild.guildMorale + 1);
+
+          return {
+            mercenaries: state.mercenaries.map((m) => (m.id === mercId ? updatedMerc : m)),
+            guild: {
+              ...state.guild,
+              resources: {
+                ...state.guild.resources,
+                gold: state.guild.resources.gold - cost,
+                supplies: state.guild.resources.supplies - suppliesCost,
+              },
+              guildMorale: newGuildMorale,
+            },
+          };
+        }),
+
       sellItem: (itemId) =>
         set((state) => {
           const item = state.items[itemId];
@@ -660,6 +714,42 @@ export const useGameStore = create<GameState>()(
                 ...state.guild.resources,
                 gold: state.guild.resources.gold + item.value,
               },
+            },
+          };
+        }),
+
+      depositToStockpile: (itemId) =>
+        set((state) => {
+          const item = state.items[itemId] ?? (ITEMS_MAP[itemId]);
+          if (!item || item.category !== 'consumable') return {};
+          const inventoryItemIds = [...state.guild.inventoryItemIds];
+          const idx = inventoryItemIds.indexOf(itemId);
+          if (idx === -1) return {};
+          inventoryItemIds.splice(idx, 1);
+          const stockpile = { ...state.guild.consumableStockpile };
+          stockpile[itemId] = (stockpile[itemId] ?? 0) + 1;
+
+          return {
+            guild: {
+              ...state.guild,
+              inventoryItemIds,
+              consumableStockpile: stockpile,
+            },
+          };
+        }),
+
+      withdrawFromStockpile: (itemId) =>
+        set((state) => {
+          const stockpile = { ...state.guild.consumableStockpile };
+          if (!stockpile[itemId] || stockpile[itemId] <= 0) return {};
+          stockpile[itemId] -= 1;
+          if (stockpile[itemId] <= 0) delete stockpile[itemId];
+
+          return {
+            guild: {
+              ...state.guild,
+              inventoryItemIds: [...state.guild.inventoryItemIds, itemId],
+              consumableStockpile: stockpile,
             },
           };
         }),
@@ -1142,11 +1232,13 @@ export const useGameStore = create<GameState>()(
                   const forge = state.guild.rooms.find(r => r.id === 'room_forge');
                   const forgeLevel = forge ? getRoomEffect(forge, 'forgeLevel') : 1;
                   
-                  const result = simulateMission(party, template, am.missionRunId, {
+                   const result = simulateMission(party, template, am.missionRunId, {
                     forgeLevel,
                     consumableItemIds: am.consumablesAssigned,
                     unlockedArtifactIds: state.guild.unlockedArtifactIds,
-                    activePerkIds: Array.from(Object.values(state.guild.regionalInfluence).flatMap(ri => ri.unlockedPerks))
+                    activePerkIds: Array.from(Object.values(state.guild.regionalInfluence).flatMap(ri => ri.unlockedPerks)),
+                    activePolicyIds: state.guild.activePolicyIds,
+                    guildMorale: state.guild.guildMorale,
                   });
 
                   autoRewardsGold += result.goldEarned;
@@ -1192,6 +1284,18 @@ export const useGameStore = create<GameState>()(
                     }
                   }
 
+                  // Auto-consume from stockpile
+                  const CONSUMABLE_IDS = ['bandages', 'field_rations', 'torch_bundle', 'lucky_salve', 'smoke_bomb'];
+                  const updatedStockpile = { ...state.guild.consumableStockpile };
+                  for (const cid of CONSUMABLE_IDS) {
+                    if (autoConsumables.length >= 2) break;
+                    if (updatedStockpile[cid] && updatedStockpile[cid] > 0) {
+                      autoConsumables.push(cid);
+                      updatedStockpile[cid] -= 1;
+                      if (updatedStockpile[cid] <= 0) delete updatedStockpile[cid];
+                    }
+                  }
+
                   const newMission: ActiveMission = {
                     missionRunId: `auto-${Date.now()}-${Math.random().toString(36).slice(2)}`,
                     templateId: availableMission.id,
@@ -1209,6 +1313,7 @@ export const useGameStore = create<GameState>()(
                     guild: {
                       ...state.guild,
                       inventoryItemIds: currentInventory,
+                      consumableStockpile: updatedStockpile,
                       resources: {
                         ...state.guild.resources,
                         gold: Math.min(goldCap, newGold + autoRewardsGold),
@@ -1320,11 +1425,13 @@ export const useGameStore = create<GameState>()(
                 const template = MISSION_TEMPLATES.find(t => t.id === am.templateId);
                 if (template) {
                   const party = currentMercs.filter(m => am.assignedMercIds.includes(m.id));
-                  const result = simulateMission(party, template, am.missionRunId, { 
+                   const result = simulateMission(party, template, am.missionRunId, { 
                     forgeLevel, 
                     consumableItemIds: am.consumablesAssigned,
                     unlockedArtifactIds: state.guild.unlockedArtifactIds,
-                    activePerkIds: Array.from(Object.values(state.guild.regionalInfluence).flatMap(ri => ri.unlockedPerks))
+                    activePerkIds: Array.from(Object.values(state.guild.regionalInfluence).flatMap(ri => ri.unlockedPerks)),
+                    activePolicyIds: state.guild.activePolicyIds,
+                    guildMorale: state.guild.guildMorale,
                   });
                   currentResources.gold = Math.min(goldCap, currentResources.gold + result.goldEarned);
                   currentResources.renown += result.renownEarned;
@@ -1656,6 +1763,18 @@ export const useGameStore = create<GameState>()(
             const savedWeather = guild.currentWeather as string | undefined;
             guild.currentWeather = WEATHER_IDS.includes(savedWeather as WeatherId) ? savedWeather : 'clear';
             guild.chronicles = (guild.chronicles as ChronicleEntry[] | undefined) ?? [];
+          }
+        }
+        if (version < 10) {
+          const guild = state.guild as Record<string, unknown> | undefined;
+          if (guild && guild.guildMorale === undefined) {
+            guild.guildMorale = 50;
+          }
+        }
+        if (version < 11) {
+          const guild = state.guild as Record<string, unknown> | undefined;
+          if (guild && !guild.consumableStockpile) {
+            guild.consumableStockpile = {};
           }
         }
         return state;

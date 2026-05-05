@@ -6,7 +6,7 @@ import type { GeneratedRecruit } from './recruit';
 import type { ActiveExpedition, ExpeditionResult } from './expedition';
 import type { PendingEvent } from './event';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 11;
 
 export interface SaveData {
   version: number;

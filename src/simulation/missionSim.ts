@@ -151,6 +151,8 @@ export interface SimulationOptions {
   activePerkIds?: string[];
   /** IDs of active guild policies */
   activePolicyIds?: string[];
+  /** Guild morale (0–100). High morale boosts party score; low morale increases injury risk. */
+  guildMorale?: number;
 }
 
 function computeSynergies(mercs: Mercenary[]): SynergyBonus[] {
@@ -245,6 +247,16 @@ export function simulateMission(
     partyScore += 1;
   }
 
+  // Guild Morale Modifier
+  const morale = options.guildMorale ?? 50;
+  let moraleInjuryPenalty = 0;
+  if (morale >= 80) {
+    partyScore *= 1.05; // High morale: +5% party score
+  } else if (morale < 30) {
+    partyScore *= 0.95; // Low morale: -5% party score
+    moraleInjuryPenalty = 0.10; // Low morale: +10% injury chance
+  }
+
   // Artifact Modifier: injury_chance & fatigue_chance (Reduction)
   const injuryMod = activeArtifacts.reduce((acc, art) => {
     const mod = art.modifiers.find(m => m.type === 'injury_chance');
@@ -302,13 +314,15 @@ export function simulateMission(
   // Injury / fatigue
   const injuredMercIds: string[] = [];
   const fatiguedMercIds: string[] = [];
+  // Low morale increases injury risk (moraleInjuryPenalty is positive, subtracted from protection)
+  const effectiveInjuryProtection = injuryProtection - moraleInjuryPenalty;
   for (const merc of mercs) {
     const r = seededRandom(seed + merc.id + 'status');
-    if (outcome === 'failure' && r < Math.max(0.05, 0.4 - injuryProtection)) {
+    if (outcome === 'failure' && r < Math.max(0.05, 0.4 - effectiveInjuryProtection)) {
       injuredMercIds.push(merc.id);
-    } else if (outcome === 'partial' && r < Math.max(0.05, 0.25 - (fatigueProtection + injuryProtection * 0.5))) {
+    } else if (outcome === 'partial' && r < Math.max(0.05, 0.25 - (fatigueProtection + effectiveInjuryProtection * 0.5))) {
       fatiguedMercIds.push(merc.id);
-    } else if (outcome === 'success' && r < Math.max(0, 0.1 - (fatigueProtection + injuryProtection * 0.5))) {
+    } else if (outcome === 'success' && r < Math.max(0, 0.1 - (fatigueProtection + effectiveInjuryProtection * 0.5))) {
       fatiguedMercIds.push(merc.id);
     }
   }

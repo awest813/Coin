@@ -93,4 +93,8 @@ export interface Guild {
   chronicles: ChronicleEntry[];
   activePolicyIds: GuildPolicyId[];
   maxPolicySlots: number;
+  /** Guild Morale: 0–100. High morale boosts party score; low morale increases injury risk. */
+  guildMorale: number;
+  /** Consumable stockpile for auto-deployment. Item ID → quantity. */
+  consumableStockpile: Record<string, number>;
 }

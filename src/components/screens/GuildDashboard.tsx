@@ -1,6 +1,7 @@
 import { useGameStore } from '~/store/gameStore';
 import { getRoomEffect } from '~/simulation/missionSim';
 import { WEATHER_IDS, type WeatherId } from '~/types/guild';
+import { ITEMS_MAP } from '~/data/items';
 
 const FIRE_GLOWS = [
   { id: 'courtyard-fire', x: '51.5%', y: '43%', size: '112px', delay: '0s' },
@@ -28,6 +29,7 @@ export function GuildDashboard() {
     upgradeRoom,
     pendingEvents,
     resolveEventChoice,
+    items,
   } = useGameStore();
 
   const availableMercs = mercenaries.filter((m) => !m.isInjured && !m.isFatigued);
@@ -147,7 +149,17 @@ export function GuildDashboard() {
             rate: getRoomEffect(guild.rooms.find(r => r.id === 'room_barracks')!, 'passiveSupplies'),
             cap: 100 + guild.guildRank * 200
           },
-        ].map((r) => (
+          { 
+            label: 'Morale', 
+            value: Math.floor(guild.guildMorale), 
+            icon: guild.guildMorale >= 80 ? '🔥' : guild.guildMorale < 30 ? '😰' : '⚖️', 
+            color: guild.guildMorale >= 80 ? 'text-amber-400' : guild.guildMorale < 30 ? 'text-rose-400' : 'text-stone-300',
+            glow: guild.guildMorale >= 80 ? 'shadow-amber-500/20' : guild.guildMorale < 30 ? 'shadow-rose-500/20' : 'shadow-stone-500/20',
+            moraleLabel: guild.guildMorale >= 80 ? 'High' : guild.guildMorale < 30 ? 'Low' : 'Steady',
+          },
+        ].map((r) => {
+          const moraleLabel = 'moraleLabel' in r ? (r as { moraleLabel: string }).moraleLabel : null;
+          return (
           <div key={r.label} className={`premium-card group shadow-2xl ${r.glow} shimmer-effect`}>
             <div className="flex justify-between items-start mb-4">
               <div className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-500">{r.icon}</div>
@@ -161,6 +173,21 @@ export function GuildDashboard() {
               {r.value}
             </div>
             <div className="text-stone-500 text-xs uppercase tracking-widest font-semibold">{r.label}</div>
+            
+            {moraleLabel && (
+              <div className="mt-4 space-y-1.5">
+                <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-1000 ${r.color.replace('text-', 'bg-')}`} 
+                    style={{ width: `${r.value}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[9px] text-stone-500 font-medium">
+                  <span>{moraleLabel}</span>
+                  <span>100 max</span>
+                </div>
+              </div>
+            )}
             
             {r.cap !== undefined && (
               <div className="mt-4 space-y-1.5">
@@ -177,8 +204,32 @@ export function GuildDashboard() {
               </div>
             )}
           </div>
-        ))}
+        );
+        })}
       </div>
+
+      {/* Consumable Stockpile */}
+      {Object.keys(guild.consumableStockpile).length > 0 && (
+        <section className="glass rounded-2xl p-6 border border-white/5">
+          <h3 className="text-xs font-black text-stone-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+            <span>📦</span> Consumable Stockpile
+            <span className="ml-auto text-[9px] text-stone-600">Auto-deployed at Rank 4+</span>
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            {Object.entries(guild.consumableStockpile).map(([itemId, qty]) => {
+              const item = items[itemId] ?? ITEMS_MAP[itemId];
+              if (!item) return null;
+              return (
+                <div key={itemId} className="flex items-center gap-2 bg-black/30 rounded-xl px-3 py-2 border border-white/5">
+                  <span className="text-lg">{item.icon ?? '📦'}</span>
+                  <span className="text-sm font-bold text-stone-200">{item.name}</span>
+                  <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">x{qty}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Events & Active Missions */}

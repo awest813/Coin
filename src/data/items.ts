@@ -302,6 +302,17 @@ export const ITEMS: Item[] = [
     statBonus: { strength: 1, agility: 1 },
     value: 70,
   },
+  {
+    id: 'silver_rapier',
+    name: 'Silver Rapier',
+    description: 'A masterwork blade from the Silver Isles, impossibly light and deadly accurate.',
+    flavorText: 'One does not fence with this blade — one waltzes with it.',
+    rarity: 'rare',
+    category: 'weapon',
+    tags: ['silver', 'arcane'],
+    statBonus: { agility: 3, presence: 1 },
+    value: 200,
+  },
   // ── Crafted armor ─────────────────────────────────────────────────────────────
   {
     id: 'reinforced_mail',

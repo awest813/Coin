@@ -50,6 +50,8 @@ function App() {
           weather: WEATHER_IDS.includes(state.guild.currentWeather)
             ? state.guild.currentWeather
             : 'clear',
+          morale: state.guild.guildMorale,
+          stockpileSize: Object.values(state.guild.consumableStockpile).reduce((s, q) => s + q, 0),
         },
         activeMissions: state.activeMissions.map((mission) => ({
           id: mission.missionRunId,

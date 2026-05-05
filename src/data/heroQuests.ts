@@ -67,7 +67,7 @@ export const HERO_QUESTS: HeroQuest[] = [
       minRenown: 150,
       minContracts: 30,
     },
-    rewardMercenaryId: 'saria',
+    rewardMercenaryId: 'merc_legend_saria',
     stages: [
       {
         id: 'saria_1',

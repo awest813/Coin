@@ -1,6 +1,8 @@
 # Banner & Coin
 
-A browser idle RPG / guild management sim built with React 19, TypeScript, Vite, and Tailwind CSS v4. Now at **Phase 2**.
+A browser idle RPG / guild management sim built with React 19, TypeScript, Vite, and Tailwind CSS v4. Now at **Phase 4: Legends & Legacies**.
+
+> "Gold is the only true language in these parts. Every banner tells a story. Every coin has a weight."
 
 ## Architecture
 

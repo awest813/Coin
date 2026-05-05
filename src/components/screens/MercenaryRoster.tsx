@@ -36,7 +36,7 @@ const SENTIMENT_COLOR: Record<string, string> = {
 };
 
 export function MercenaryRoster() {
-  const { mercenaries, updateMercenary, items, guild, equipItem, unequipItem } = useGameStore();
+  const { mercenaries, items, guild, equipItem, unequipItem, restMercenary } = useGameStore();
   const [selected, setSelected] = useState<Mercenary | null>(null);
   const [equipSlot, setEquipSlot] = useState<EquipmentSlot | null>(null);
 
@@ -122,8 +122,13 @@ export function MercenaryRoster() {
                     )}
                   </div>
                   <p className={`${selectedLive.isLegendary ? 'text-amber-500/80' : 'text-primary'} text-[10px] font-black uppercase tracking-[0.2em]`}>{selectedLive.title}</p>
-                  <div className="mt-2 stat-badge bg-white/5 border-white/5 text-[9px] text-stone-500">
-                    {selectedLive.missionsCompleted} Deployments Complete
+                  <div className="mt-2 flex gap-2">
+                    <span className="stat-badge bg-white/5 border-white/5 text-[9px] text-stone-500">
+                      {selectedLive.missionsCompleted} Deployments Complete
+                    </span>
+                    <span className={`stat-badge text-[9px] ${selectedLive.morale >= 8 ? 'bg-green-900/30 text-green-400 border-green-900/50' : selectedLive.morale < 4 ? 'bg-rose-900/30 text-rose-400 border-rose-900/50' : 'bg-amber-900/30 text-amber-400 border-amber-900/50'}`}>
+                      ♥ {selectedLive.morale} Morale
+                    </span>
                   </div>
                 </div>
               </div>
@@ -145,6 +150,29 @@ export function MercenaryRoster() {
                 </div>
               )}
 
+              {/* Training Progress */}
+              {selectedLive.isTraining && !selectedLive.isInjured && !selectedLive.isFatigued && (
+                <div className="p-6 glass rounded-[2rem] border-sky-500/20 bg-sky-500/5 space-y-3">
+                  <h4 className="text-[10px] font-black text-sky-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                    Training in Progress
+                  </h4>
+                  <div className="text-sm font-bold text-white">
+                    {selectedLive.trainingStat ? selectedLive.trainingStat.charAt(0).toUpperCase() + selectedLive.trainingStat.slice(1) : 'Stat'} Training
+                  </div>
+                  <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-sky-400 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, selectedLive.trainingProgress ?? 0)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[9px] text-stone-500 font-medium">
+                    <span>{Math.floor(selectedLive.trainingProgress ?? 0)}% complete</span>
+                    <span>Each 100% grants +0.1 stat point</span>
+                  </div>
+                </div>
+              )}
+
               {/* Status Section */}
               {(selectedLive.isInjured || selectedLive.isFatigued) && (
                 <div className="p-6 glass rounded-[2rem] border-rose-500/20 bg-rose-500/5 space-y-4">
@@ -158,13 +186,11 @@ export function MercenaryRoster() {
                     )}
                   </div>
                   <button
-                    onClick={() => {
-                      const updated = { ...selectedLive, isInjured: false, isFatigued: false };
-                      updateMercenary(updated);
-                    }}
-                    className="w-full py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-xl haptic-click shadow-lg shadow-rose-900/20"
+                    onClick={() => restMercenary(selectedLive.id)}
+                    disabled={guild.resources.gold < (selectedLive.isInjured ? 30 : 15) || guild.resources.supplies < (selectedLive.isInjured ? 10 : 5)}
+                    className="w-full py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-xl haptic-click shadow-lg shadow-rose-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                   >
-                    Authorize Recovery Protocols
+                    Rest at Tavern ({selectedLive.isInjured ? '30g + 10 supplies' : '15g + 5 supplies'})
                   </button>
                 </div>
               )}

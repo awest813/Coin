@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore, maxConcurrentMissions } from '~/store/gameStore';
 import { MercCard } from '~/components/MercCard';
 import { MissionCard } from '~/components/MissionCard';
+import { MissionBriefingModal } from '~/components/MissionBriefingModal';
 import { MISSION_TEMPLATES } from '~/data/missions';
 import { simulateMission } from '~/simulation/missionSim';
 import { getRoomEffect } from '~/simulation/missionSim';
@@ -22,6 +23,7 @@ export function MissionBoard() {
   const { mercenaries, activeMissions, addActiveMission, applyMissionResult, guild, items } =
     useGameStore();
   const [selectedMission, setSelectedMission] = useState<MissionTemplate | null>(null);
+  const [briefingMission, setBriefingMission] = useState<MissionTemplate | null>(null);
   const [selectedMercIds, setSelectedMercIds] = useState<string[]>([]);
   const [selectedConsumables, setSelectedConsumables] = useState<string[]>([]);
   const [assignStep, setAssignStep] = useState<AssignStep>('mercs');
@@ -81,7 +83,9 @@ export function MissionBoard() {
       forgeLevel, 
       consumableItemIds: activeMission.consumablesAssigned ?? [],
       unlockedArtifactIds: guild.unlockedArtifactIds,
-      activePerkIds: Array.from(Object.values(guild.regionalInfluence).flatMap(ri => ri.unlockedPerks))
+      activePerkIds: Array.from(Object.values(guild.regionalInfluence).flatMap(ri => ri.unlockedPerks)),
+      activePolicyIds: guild.activePolicyIds,
+      guildMorale: guild.guildMorale,
     });
 
     const matDrops: Record<string, number> = {};
@@ -212,12 +216,7 @@ export function MissionBoard() {
               <div key={mission.id} className={`group transition-opacity duration-300 ${disabled ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}>
                 <MissionCard
                   mission={mission}
-                  onAssign={() => {
-                    setSelectedMission(mission);
-                    setSelectedMercIds([]);
-                    setSelectedConsumables([]);
-                    setAssignStep('mercs');
-                  }}
+                  onAssign={() => setBriefingMission(mission)}
                   disabled={disabled}
                 />
                 <div className="mt-2 flex items-center justify-between px-2">
@@ -234,6 +233,21 @@ export function MissionBoard() {
           })}
         </div>
       </section>
+
+      {/* Mission Briefing Modal */}
+      {briefingMission && (
+        <MissionBriefingModal
+          mission={briefingMission}
+          onAccept={() => {
+            setSelectedMission(briefingMission);
+            setBriefingMission(null);
+            setSelectedMercIds([]);
+            setSelectedConsumables([]);
+            setAssignStep('mercs');
+          }}
+          onDecline={() => setBriefingMission(null)}
+        />
+      )}
 
       {/* Assignment Modal (Overlay) */}
       {selectedMission && (

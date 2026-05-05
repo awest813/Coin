@@ -311,7 +311,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     reward: {
       gold: 100,
       renown: 10,
-      possibleItems: ['iron_sword', 'chain_mail', 'soldiers_sword', 'lucky_charm', 'leather_armor'],
+      possibleItems: ['iron_sword', 'chain_mail', 'soldier_sword', 'lucky_charm', 'leather_armor'],
     },
     flavorText: {
       success:
