@@ -6,7 +6,8 @@ export type MissionTag =
   | 'escort'
   | 'hunt'
   | 'bounty'
-  | 'ruin';
+  | 'ruin'
+  | 'campaign';
 
 export type MissionOutcome = 'success' | 'partial' | 'failure';
 
@@ -42,6 +43,8 @@ export interface MissionTemplate {
   flavorText: Record<MissionOutcome, string>;
   /** optional extra flavor variants (randomly chosen in addition to base) */
   eventSnippets?: string[];
+  /** Is this part of the Phase 7: Grand Campaign? */
+  isCampaign?: boolean;
 }
 
 export interface ActiveMission {
@@ -80,6 +83,7 @@ export interface MissionResult {
   scoreBreakdown: ScoreBreakdownEntry[];
   synergies?: SynergyBonus[];
   narrativeEvents: string[];
+  durabilityLoss?: { mercId: string; loss: Partial<Record<import('./mercenary').EquipmentSlot, number>> }[];
   /** Optional material drops keyed by material ID, added by mission resolution UI */
   materialsEarned?: Record<string, number>;
 }

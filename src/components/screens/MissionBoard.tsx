@@ -4,6 +4,7 @@ import { MercCard } from '~/components/MercCard';
 import { MissionCard } from '~/components/MissionCard';
 import { MissionBriefingModal } from '~/components/MissionBriefingModal';
 import { MISSION_TEMPLATES } from '~/data/missions';
+import { CAMPAIGN_MISSIONS } from '~/data/campaign';
 import { simulateMission } from '~/simulation/missionSim';
 import { getRoomEffect } from '~/simulation/missionSim';
 import { ITEMS_MAP } from '~/data/items';
@@ -20,7 +21,7 @@ const TAG_MATERIAL_HINTS: Record<string, string> = {
 type AssignStep = 'mercs' | 'consumables';
 
 export function MissionBoard() {
-  const { mercenaries, activeMissions, addActiveMission, applyMissionResult, guild, items } =
+  const { mercenaries, activeMissions, addActiveMission, applyMissionResult, guild, items, campaignActive, campaignStage } =
     useGameStore();
   const [selectedMission, setSelectedMission] = useState<MissionTemplate | null>(null);
   const [briefingMission, setBriefingMission] = useState<MissionTemplate | null>(null);
@@ -75,7 +76,9 @@ export function MissionBoard() {
   function handleResolve(missionRunId: string) {
     const activeMission = activeMissions.find((am) => am.missionRunId === missionRunId);
     if (!activeMission) return;
-    const template = MISSION_TEMPLATES.find((t) => t.id === activeMission.templateId);
+    
+    const allPossible = [...MISSION_TEMPLATES, ...CAMPAIGN_MISSIONS];
+    const template = allPossible.find((t) => t.id === activeMission.templateId);
     if (!template) return;
     const mercs = mercenaries.filter((m) => activeMission.assignedMercIds.includes(m.id));
     const seed = `${activeMission.startedAt}-${guild.resources.renown}`;
@@ -127,6 +130,15 @@ export function MissionBoard() {
         </div>
         <div className="flex flex-col items-end">
           <div className="flex gap-4">
+            {guild.guildRank >= 4 && (
+              <div 
+                onClick={() => useGameStore.getState().setAutomationSetting('autoDeploy', !guild.automationSettings.autoDeploy)}
+                className={`stat-badge cursor-pointer transition-all ${guild.automationSettings.autoDeploy ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/5 text-stone-500'}`}
+              >
+                <span className="text-[10px] font-black uppercase tracking-widest">Auto-Deploy</span>
+                <span className="ml-2">{guild.automationSettings.autoDeploy ? 'ON' : 'OFF'}</span>
+              </div>
+            )}
             <div className="stat-badge glass">
               <span className="text-stone-500 mr-1 uppercase text-[10px] tracking-widest font-bold">Active</span>
               <span className="text-primary font-bold">{activeMissions.length} / {missionCap}</span>
@@ -146,15 +158,19 @@ export function MissionBoard() {
           <h2 className="text-xs font-black text-stone-600 uppercase tracking-[0.3em] px-1">Current Deployments</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {activeMissions.map((am) => {
-              const template = MISSION_TEMPLATES.find((t) => t.id === am.templateId);
+              const allPossible = [...MISSION_TEMPLATES, ...CAMPAIGN_MISSIONS];
+              const template = allPossible.find((t) => t.id === am.templateId);
               const remaining = Math.max(0, Math.floor((new Date(am.endTime).getTime() - useGameStore.getState().currentTime) / 1000));
               const isDone = remaining <= 0;
               const total = template?.durationSeconds ?? 1;
               const progress = Math.min(100, ((total - remaining) / total) * 100);
 
+              const isCampaign = template?.isCampaign;
+
               return (
-                <div key={am.missionRunId} className="premium-card relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl">⚔️</div>
+                <div key={am.missionRunId} className={`premium-card relative overflow-hidden group ${isCampaign ? 'border-rose-600/30' : ''}`}>
+                  {isCampaign && <div className="absolute inset-0 bg-rose-600/5 pointer-events-none" />}
+                  <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl">{isCampaign ? '🚩' : '⚔️'}</div>
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-4">
                       <div>
@@ -208,29 +224,43 @@ export function MissionBoard() {
       <section className="space-y-6">
         <h2 className="text-xs font-black text-stone-600 uppercase tracking-[0.3em] px-1">Available Contracts</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {MISSION_TEMPLATES.map((mission) => {
-            const alreadyActive = activeMissions.some((am) => am.templateId === mission.id);
-            const disabled = atMissionCap || alreadyActive;
+          {(() => {
+            const allPossible = [...MISSION_TEMPLATES];
+            if (campaignActive && campaignStage < CAMPAIGN_MISSIONS.length) {
+              allPossible.unshift(CAMPAIGN_MISSIONS[campaignStage]);
+            }
 
-            return (
-              <div key={mission.id} className={`group transition-opacity duration-300 ${disabled ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}>
-                <MissionCard
-                  mission={mission}
-                  onAssign={() => setBriefingMission(mission)}
-                  disabled={disabled}
-                />
-                <div className="mt-2 flex items-center justify-between px-2">
-                  <div className="text-[10px] text-stone-500 flex gap-2 italic font-serif">
-                    {mission.tags.map(tag => TAG_MATERIAL_HINTS[tag]).filter(Boolean).slice(0, 1).map(hint => (
-                      <span key={hint}>Expected loot: {hint}</span>
-                    ))}
+            return allPossible.map((mission) => {
+              const alreadyActive = activeMissions.some((am) => am.templateId === mission.id);
+              const disabled = atMissionCap || alreadyActive;
+              const isCampaign = mission.isCampaign;
+
+              return (
+                <div key={mission.id} className={`group transition-all duration-500 ${disabled ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'} ${isCampaign ? 'scale-105 z-10' : ''}`}>
+                  <div className={isCampaign ? 'ring-2 ring-rose-600/50 rounded-[2rem] shadow-[0_0_30px_rgba(225,29,72,0.2)]' : ''}>
+                    <MissionCard
+                      mission={mission}
+                      onAssign={() => setBriefingMission(mission)}
+                      disabled={disabled}
+                    />
                   </div>
-                  {alreadyActive && <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Active</span>}
-                  {!alreadyActive && atMissionCap && <span className="text-[10px] font-bold text-stone-700 uppercase tracking-widest animate-shake">Slots Full</span>}
+                  <div className="mt-2 flex items-center justify-between px-2">
+                    <div className="text-[10px] text-stone-500 flex gap-2 italic font-serif">
+                      {isCampaign ? (
+                         <span className="text-rose-500 font-bold uppercase tracking-widest">CRITICAL CAMPAIGN OBJECTIVE</span>
+                      ) : (
+                        mission.tags.map(tag => TAG_MATERIAL_HINTS[tag]).filter(Boolean).slice(0, 1).map(hint => (
+                          <span key={hint}>Expected loot: {hint}</span>
+                        ))
+                      )}
+                    </div>
+                    {alreadyActive && <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Active</span>}
+                    {!alreadyActive && atMissionCap && <span className="text-[10px] font-bold text-stone-700 uppercase tracking-widest animate-shake">Slots Full</span>}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </div>
       </section>
 
@@ -272,7 +302,8 @@ export function MissionBoard() {
                         consumableItemIds: selectedConsumables,
                         unlockedArtifactIds: guild.unlockedArtifactIds,
                         activePerkIds: Array.from(Object.values(guild.regionalInfluence).flatMap(ri => ri.unlockedPerks)),
-                        activePolicyIds: guild.activePolicyIds
+                        activePolicyIds: guild.activePolicyIds,
+                        guildMorale: guild.guildMorale,
                       });
                       const margin = sim.partyScore - selectedMission.difficulty;
                       if (margin >= 4) return 'EXCELLENT';

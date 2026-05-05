@@ -82,6 +82,22 @@ export const ARTIFACTS: Artifact[] = [
       materials: { silver_dust: 200, moonstone_shard: 5 },
     },
   },
+  {
+    id: 'sovereign_aegis',
+    name: 'Sovereign Aegis',
+    icon: '🏰',
+    description: 'The ultimate symbol of guild authority. Reduces injury and fatigue chances by 90%.',
+    lore: 'Forged in the heart of the Sovereign Keep. It hums with the pulse of the world.',
+    modifiers: [
+      { type: 'fatigue_chance', value: -0.9 },
+      { type: 'success_chance', value: 0.15 },
+    ],
+    cost: {
+      gold: 0,
+      renown: 0,
+      materials: {},
+    },
+  },
 ];
 
 export const ARTIFACTS_MAP: Record<string, Artifact> = ARTIFACTS.reduce(

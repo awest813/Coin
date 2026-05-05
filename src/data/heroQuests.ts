@@ -110,4 +110,58 @@ export const HERO_QUESTS: HeroQuest[] = [
       },
     ],
   },
+  {
+    id: 'quest_grom',
+    name: 'The Iron Wall',
+    description: 'A massive gladiator is causing a stir in the regional pits, refusing to join any guild that can\'t survive his "test".',
+    triggerCondition: {
+      minRenown: 300,
+      minContracts: 50,
+    },
+    rewardMercenaryId: 'merc_legend_grom',
+    stages: [
+      {
+        id: 'grom_1',
+        title: 'The Challenge',
+        narrative: 'Grom stands seven feet tall, covered in scars. "You want my shield? Then let your best fighter take a hit from my hammer. If they stand, we talk."',
+        choices: [
+          {
+            label: 'Face him head-on (Strength check)',
+            requirement: { stat: 'strength', value: 9 },
+            outcome: {
+              text: 'The hammer blow rings out like a mountain cracking. Your mercenary doesn\'t budge. Grom grins. "Solid. I like solid."',
+              success: true,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'quest_lyra',
+    name: 'Shadows of the Past',
+    description: 'A series of high-profile thefts in the City Below has left a trail that only a master tracker could follow.',
+    triggerCondition: {
+      minRenown: 400,
+      minContracts: 60,
+    },
+    rewardMercenaryId: 'merc_legend_lyra',
+    stages: [
+      {
+        id: 'lyra_1',
+        title: 'The Rooftop Chase',
+        narrative: 'You corner a hooded figure on the spires of the Clocktower. She moves like smoke, always one step ahead.',
+        choices: [
+          {
+            label: 'Intercept her path (Agility check)',
+            requirement: { stat: 'agility', value: 9 },
+            outcome: {
+              text: 'You predict her leap and catch her mid-air. She laughs, pulling back her hood. "Not bad for a guildmaster. I might have a use for you."',
+              success: true,
+            },
+          },
+        ],
+      },
+    ],
+  },
 ];

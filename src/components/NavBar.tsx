@@ -4,7 +4,8 @@ import { getAllActivePerks } from '~/data/regions';
 
 const NAV_ITEMS: { id: ActiveScreen; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Guild Hall', icon: '🏰' },
-  { id: 'roster', label: 'Roster', icon: '⚔️' },
+  { id: 'warroom', label: 'War Room', icon: '⚔️' },
+  { id: 'roster', label: 'Roster', icon: '🛡️' },
   { id: 'missions', label: 'Missions', icon: '📋' },
   { id: 'inventory', label: 'Inventory', icon: '🎒' },
   { id: 'workshop', label: 'Workshop', icon: '🔨' },
@@ -15,7 +16,37 @@ const NAV_ITEMS: { id: ActiveScreen; label: string; icon: string }[] = [
   { id: 'chronicles', label: 'Chronicles', icon: '📖' },
   { id: 'customization', label: 'Custom Hall', icon: '🎭' },
   { id: 'policies', label: 'Policies', icon: '📜' },
+  { id: 'market', label: 'Market', icon: '⚖️' },
 ];
+
+export function getFeatureUnlockRank(id: ActiveScreen): number {
+  switch (id) {
+    case 'dashboard':
+    case 'roster':
+    case 'missions':
+    case 'inventory':
+    case 'hiring':
+    case 'chronicles':
+      return 1;
+    case 'market':
+    case 'worldmap':
+      return 2;
+    case 'workshop':
+      return 3;
+    case 'expeditions':
+      return 4;
+    case 'reliquary':
+      return 5;
+    case 'policies':
+      return 6;
+    case 'customization':
+      return 7;
+    case 'warroom':
+      return 8;
+    default:
+      return 1;
+  }
+}
 
 export function NavBar() {
   const { activeScreen, setScreen, guild, pendingEvents, activeMissions } = useGameStore();
@@ -44,6 +75,8 @@ export function NavBar() {
         {/* Navigation Tabs */}
         <div className="flex bg-black/60 p-2 rounded-2xl border border-white/5 gap-1.5 overflow-x-auto no-scrollbar max-w-full glass-dark">
           {NAV_ITEMS.map((item) => {
+            const unlockRank = getFeatureUnlockRank(item.id);
+            const isLocked = guild.guildRank < unlockRank;
             const isActive = activeScreen === item.id;
             const anyMissionReady = activeMissions.some(am => new Date(am.endTime).getTime() <= useGameStore.getState().currentTime);
             
@@ -55,19 +88,25 @@ export function NavBar() {
             return (
               <button
                 key={item.id}
-                onClick={() => setScreen(item.id)}
+                onClick={() => !isLocked && setScreen(item.id)}
+                disabled={isLocked}
                 className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all whitespace-nowrap flex items-center gap-2.5 haptic-click relative ${
                   isActive 
                   ? 'bg-primary text-stone-950 shadow-[0_4px_15px_rgba(251,191,36,0.3)] scale-[1.02]' 
-                  : 'text-stone-500 hover:text-white hover:bg-white/5'
+                  : isLocked
+                    ? 'text-stone-700 cursor-not-allowed grayscale'
+                    : 'text-stone-500 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <span className="text-base icon-premium">{item.icon}</span>
                 <span className="hidden lg:inline">{item.label}</span>
-                {showBadge && (
+                {showBadge && !isLocked && (
                   <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-stone-950 animate-pulse flex items-center justify-center shadow-[0_0_8px_rgba(251,191,36,0.6)]">
                     <span className="w-1.5 h-1.5 bg-stone-950 rounded-full" />
                   </span>
+                )}
+                {isLocked && (
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-stone-900 rounded-full border-2 border-stone-950 flex items-center justify-center text-[8px]">🔒</span>
                 )}
               </button>
             );

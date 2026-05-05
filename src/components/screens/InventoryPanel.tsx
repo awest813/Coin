@@ -15,43 +15,57 @@ const CATEGORY_TO_SLOT: Record<string, EquipmentSlot | null> = {
 
 interface EquipTarget {
   itemId: string;
+  inventoryIndex: number;
   slot: EquipmentSlot;
 }
 
 type InventoryTab = 'items' | 'materials';
 
 export function InventoryPanel() {
-  const { guild, items, mercenaries, sellItem, equipItem, setScreen } = useGameStore();
+  const { guild, items, mercenaries, sellItem, equipItem, setScreen, depositToStockpile, withdrawFromStockpile } = useGameStore();
   const { inventoryItemIds, materials } = guild;
   const [equipTarget, setEquipTarget] = useState<EquipTarget | null>(null);
   const [activeTab, setActiveTab] = useState<InventoryTab>('items');
 
-  // Count duplicates
-  const counts: Record<string, number> = {};
-  for (const id of inventoryItemIds) {
-    counts[id] = (counts[id] ?? 0) + 1;
+  // Group by (id, durability)
+  interface GroupedItem {
+    id: string;
+    durability: number;
+    count: number;
+    firstIndex: number;
   }
-  const uniqueIds = [...new Set(inventoryItemIds)];
+  const groupedItems: GroupedItem[] = [];
+  inventoryItemIds.forEach((id, index) => {
+    const durability = guild.inventoryDurability[index] ?? 100;
+    const existing = groupedItems.find(g => g.id === id && g.durability === durability);
+    if (existing) {
+      existing.count++;
+    } else {
+      groupedItems.push({ id, durability, count: 1, firstIndex: index });
+    }
+  });
 
   const totalMaterials = Object.values(materials).reduce((s, q) => s + q, 0);
 
-  function handleSell(item: Item) {
+  function handleSell(id: string, index: number) {
+    const item = items[id];
+    if (!item) return;
     if (confirm(`Sell "${item.name}" for ${item.value}g?`)) {
-      sellItem(item.id);
+      sellItem(index);
     }
   }
 
-  function handleEquip(itemId: string) {
-    const item = items[itemId];
+  function handleEquip(id: string, index: number) {
+    const item = items[id];
     if (!item) return;
     const slot = CATEGORY_TO_SLOT[item.category];
     if (!slot) return;
-    setEquipTarget({ itemId, slot });
+    setEquipTarget({ itemId: id, inventoryIndex: index, slot });
   }
 
   function handleEquipToMerc(mercId: string) {
     if (!equipTarget) return;
-    equipItem(mercId, equipTarget.slot, equipTarget.itemId);
+    equipItem(mercId, equipTarget.slot, equipTarget.inventoryIndex);
     setEquipTarget(null);
   }
 
@@ -87,16 +101,63 @@ export function InventoryPanel() {
         </div>
       </header>
 
+      {/* Stockpile Status (Consumables only) */}
+      <section className="p-6 glass-dark border border-primary/20 rounded-[2.5rem] bg-primary/[0.02] flex flex-col md:flex-row items-center justify-between gap-6 animate-in fade-in zoom-in duration-700">
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl shadow-inner">📦</div>
+          <div>
+            <h3 className="text-white font-bold text-lg font-heading">Guild Consumable Stockpile</h3>
+            <p className="text-stone-500 text-[10px] font-black uppercase tracking-widest mt-0.5">Automated Logistics Support</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {Object.entries(guild.consumableStockpile).length === 0 ? (
+            <span className="text-stone-600 text-[10px] italic font-serif">Stockpile is currently empty.</span>
+          ) : (
+            Object.entries(guild.consumableStockpile).map(([itemId, qty]) => {
+              const item = items[itemId] ?? (ITEMS_MAP as any)[itemId];
+              return (
+                <div key={itemId} className="flex items-center gap-2 bg-black/40 border border-white/5 pl-2 pr-3 py-1.5 rounded-xl group relative">
+                  <span className="text-lg">{item?.icon}</span>
+                  <span className="text-[10px] font-bold text-stone-300">{qty}</span>
+                  <button
+                    onClick={() => withdrawFromStockpile(itemId)}
+                    className="ml-2 w-4 h-4 rounded-full bg-white/5 hover:bg-white/10 text-stone-500 hover:text-white flex items-center justify-center text-[8px] transition-all"
+                    title="Withdraw to inventory"
+                  >
+                    ↑
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+        {guild.guildRank >= 4 && (
+          <div className="flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-xl">
+             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+             <span className="text-[10px] font-black text-primary uppercase tracking-widest">Auto-Deploy Ready</span>
+          </div>
+        )}
+      </section>
+
       {activeTab === 'materials' && (
         <section className="space-y-6">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-[10px] font-black text-stone-600 uppercase tracking-[0.3em]">Raw Resources</h2>
-            <button
-              onClick={() => setScreen('workshop')}
-              className="text-[10px] font-black text-primary hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2 group haptic-click"
-            >
-              Master Forge <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </button>
+            <div className="flex gap-6">
+              <button 
+                onClick={() => setScreen('market')}
+                className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-white transition-colors haptic-click"
+              >
+                ⚖️ Trade at Market →
+              </button>
+              <button
+                onClick={() => setScreen('workshop')}
+                className="text-[10px] font-black text-primary hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2 group haptic-click"
+              >
+                Master Forge <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </button>
+            </div>
           </div>
 
           {totalMaterials === 0 ? (
@@ -182,33 +243,41 @@ export function InventoryPanel() {
             </div>
           )}
 
-          {uniqueIds.length === 0 ? (
+          {groupedItems.length === 0 ? (
             <div className="py-32 text-center glass-dark rounded-[2.5rem] border border-dashed border-white/10">
               <p className="text-stone-500 text-sm italic font-serif">The vault is currently empty. Reclaim glory to reclaim gear.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {uniqueIds.map((id) => {
-                const item = items[id];
+              {groupedItems.map((g, i) => {
+                const item = items[g.id];
                 if (!item) return null;
                 const slot = CATEGORY_TO_SLOT[item.category];
                 const equippable = slot !== null;
                 return (
-                  <div key={id} className="premium-card flex flex-col h-full group hover:border-white/20 transition-all">
+                  <div key={`${g.id}-${g.durability}-${i}`} className="premium-card flex flex-col h-full group hover:border-white/20 transition-all">
                     <div className="flex-1">
-                      <ItemCard item={item} count={counts[id]} />
+                      <ItemCard item={item} count={g.count} durability={g.durability} />
                     </div>
                     <div className="flex gap-2 mt-6">
                       {equippable && (
                         <button
-                          onClick={() => handleEquip(id)}
+                          onClick={() => handleEquip(g.id, g.firstIndex)}
                           className="flex-[2] py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-primary text-stone-950 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.95] haptic-click"
                         >
                           Equip
                         </button>
                       )}
+                      {item.category === 'consumable' && (
+                        <button
+                          onClick={() => depositToStockpile(g.firstIndex)}
+                          className="flex-[2] py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/20 haptic-click"
+                        >
+                          Stockpile
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleSell(item)}
+                        onClick={() => handleSell(g.id, g.firstIndex)}
                         className="flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-white/5 hover:bg-white/10 text-stone-300 border border-white/5 haptic-click"
                       >
                         Sell ({item.value}g)

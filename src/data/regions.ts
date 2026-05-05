@@ -128,6 +128,29 @@ export const REGION_DATA: RegionData[] = [
       },
     ],
   },
+  {
+    id: 'whispering_peaks',
+    name: 'Whispering Peaks',
+    icon: '🌩️',
+    description: 'The highest spires of the world. The air is thin and the storms are alive.',
+    flavorText: '"The wind here tells stories of the Sovereign Keep. Listen closely."',
+    biome: 'mountain',
+    relevantTags: ['exploration', 'ruin', 'combat'],
+    milestones: [
+      {
+        threshold: 50,
+        perkId: 'peaks_storm_riders',
+        label: 'Storm Riders',
+        description: 'Mission duration reduced by 25% through high-altitude pathfinding.',
+      },
+      {
+        threshold: 100,
+        perkId: 'peaks_sovereign_clue',
+        label: 'Sovereign Insight',
+        description: '+10% success margin on all Campaign missions.',
+      },
+    ],
+  },
 ];
 
 /** Map region name -> region data for O(1) lookup */

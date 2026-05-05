@@ -18,37 +18,42 @@ function seededRandom(seed: string): number {
 }
 
 /** Return the equipped items for a merc from the global item registry */
-function getEquippedItems(merc: Mercenary): Item[] {
-  const items: Item[] = [];
-  for (const itemId of Object.values(merc.equipment)) {
+function getEquippedItems(merc: Mercenary, durability?: Partial<Record<EquipmentSlot, number>>): { item: Item; dur: number }[] {
+  const items: { item: Item; dur: number }[] = [];
+  for (const [slot, itemId] of Object.entries(merc.equipment)) {
     if (itemId) {
       const item = ITEMS_MAP[itemId];
-      if (item) items.push(item);
+      const dur = durability?.[slot as EquipmentSlot] ?? 100;
+      if (item) items.push({ item, dur });
     }
   }
   return items;
 }
 
 /** Total stat bonus from equipped items for a given stat */
-function equipStatBonus(merc: Mercenary, stat: 'strength' | 'agility' | 'intellect' | 'presence'): number {
-  return getEquippedItems(merc).reduce((sum, item) => sum + (item.statBonus?.[stat] ?? 0), 0);
+function equipStatBonus(merc: Mercenary, stat: 'strength' | 'agility' | 'intellect' | 'presence', durability?: Partial<Record<EquipmentSlot, number>>): number {
+  return getEquippedItems(merc, durability).reduce((sum, { item, dur }) => {
+    if (dur <= 0) return sum; // Broken items give no bonus
+    return sum + (item.statBonus?.[stat] ?? 0);
+  }, 0);
 }
 
 /** Score a single merc against a mission, returning a full breakdown entry */
 function scoreMercDetailed(
   merc: Mercenary,
   template: MissionTemplate,
-  partyMercIds: string[]
+  partyMercIds: string[],
+  durability?: Partial<Record<EquipmentSlot, number>>
 ): ScoreBreakdownEntry {
   const { strength, agility, intellect, presence } = merc.stats;
 
   // Base = sum of raw stats + equipment bonuses
   const rawStats = strength + agility + intellect + presence;
   const equipBonus =
-    equipStatBonus(merc, 'strength') +
-    equipStatBonus(merc, 'agility') +
-    equipStatBonus(merc, 'intellect') +
-    equipStatBonus(merc, 'presence');
+    equipStatBonus(merc, 'strength', durability) +
+    equipStatBonus(merc, 'agility', durability) +
+    equipStatBonus(merc, 'intellect', durability) +
+    equipStatBonus(merc, 'presence', durability);
   const baseScore = rawStats + equipBonus;
 
   // Trait bonuses when tags match
@@ -153,6 +158,8 @@ export interface SimulationOptions {
   activePolicyIds?: string[];
   /** Guild morale (0–100). High morale boosts party score; low morale increases injury risk. */
   guildMorale?: number;
+  /** IDs of strategic assets unlocked in the War Room */
+  unlockedStrategicAssetIds?: string[];
 }
 
 function computeSynergies(mercs: Mercenary[]): SynergyBonus[] {
@@ -204,7 +211,7 @@ export function simulateMission(
 ): MissionResult {
   const partyMercIds = mercs.map((m) => m.id);
   const scoreBreakdown: ScoreBreakdownEntry[] = mercs.map((m) =>
-    scoreMercDetailed(m, template, partyMercIds)
+    scoreMercDetailed(m, template, partyMercIds, m.equipmentDurability)
   );
   
   const synergies = computeSynergies(mercs);
@@ -277,6 +284,20 @@ export function simulateMission(
     fatigueProtection += 0.2;
   }
 
+  // ── Strategic Assets ──────────────────────────────────────────────────────
+  const assets = new Set(options.unlockedStrategicAssetIds ?? []);
+  if (assets.has('asset_siege_train') && template.tags.includes('combat')) {
+    partyScore += 3;
+    synergies.push({ name: 'Siege Train', scoreBonus: 3, description: 'Heavy ordnance clears the path.' });
+  }
+  if (assets.has('asset_intelligence_network') && (template.tags.includes('stealth') || template.tags.includes('social'))) {
+    partyScore += 2;
+    synergies.push({ name: 'Intel Network', scoreBonus: 2, description: 'Inside information on enemy movements.' });
+  }
+  if (assets.has('asset_veteran_trainers')) {
+    // Note: XP bonus applied in store when processing result (not implemented yet)
+  }
+
   // ── Resolution ────────────────────────────────────────────────────────────
 
   const roll = seededRandom(seed + template.id);
@@ -345,6 +366,14 @@ export function simulateMission(
     scoreBreakdown,
     synergies,
     narrativeEvents,
+    durabilityLoss: mercs.map(m => {
+      const loss: Partial<Record<EquipmentSlot, number>> = {};
+      const baseLoss = outcome === 'failure' ? 10 : outcome === 'partial' ? 5 : 2;
+      for (const slot of Object.keys(m.equipment)) {
+        loss[slot as EquipmentSlot] = baseLoss + Math.floor(seededRandom(seed + m.id + slot) * 5);
+      }
+      return { mercId: m.id, loss };
+    }),
   };
 }
 

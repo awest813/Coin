@@ -13,14 +13,19 @@ import { Reliquary } from '~/components/screens/Reliquary';
 import { GuildChronicles } from './components/screens/GuildChronicles';
 import { DioramaShop } from '~/components/screens/DioramaShop';
 import { GuildPolicies } from '~/components/screens/GuildPolicies';
+import { Market } from '~/components/screens/Market';
+import { WarRoom } from '~/components/screens/WarRoom';
 import { ResultsModal } from '~/components/ResultsModal';
 import { OfflineModal } from '~/components/OfflineModal';
-import { MainMenu } from '~/components/MainMenu';
+import { GuildScene } from '~/babylon/GuildScene';
+import { ToastContainer } from '~/components/ToastContainer';
 import { HeroQuestModal } from '~/components/HeroQuestModal';
+import { MainMenu } from '~/components/MainMenu';
+import { VictoryScreen } from '~/components/VictoryScreen';
 import { WEATHER_IDS } from '~/types/guild';
 
 function App() {
-  const { activeScreen, isInMainMenu, setInMainMenu, tick, calculateOfflineProgress } = useGameStore();
+  const { activeScreen, isInMainMenu, setInMainMenu, tick, calculateOfflineProgress, campaignStage } = useGameStore();
 
   useEffect(() => {
     // Wait a tiny bit for hydration to be certain, though Zustand persist is usually ready
@@ -97,6 +102,9 @@ function App() {
       
       {isInMainMenu && <MainMenu />}
       
+      {/* Victory Finale */}
+      {campaignStage >= 5 && <VictoryScreen />}
+      
       {/* Dynamic Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full animate-pulse" />
@@ -119,12 +127,15 @@ function App() {
           {activeScreen === 'chronicles' && <GuildChronicles />}
           {activeScreen === 'customization' && <DioramaShop />}
           {activeScreen === 'policies' && <GuildPolicies />}
+          {activeScreen === 'market' && <Market />}
+          {activeScreen === 'warroom' && <WarRoom />}
         </main>
       </div>
       
       <ResultsModal />
       <OfflineModal />
       <HeroQuestModal />
+      <ToastContainer />
     </div>
   );
 }

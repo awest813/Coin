@@ -36,7 +36,7 @@ const SENTIMENT_COLOR: Record<string, string> = {
 };
 
 export function MercenaryRoster() {
-  const { mercenaries, items, guild, equipItem, unequipItem, restMercenary } = useGameStore();
+  const { mercenaries, items, guild, equipItem, unequipItem, restMercenary, repairItem } = useGameStore();
   const [selected, setSelected] = useState<Mercenary | null>(null);
   const [equipSlot, setEquipSlot] = useState<EquipmentSlot | null>(null);
 
@@ -377,6 +377,31 @@ export function MercenaryRoster() {
                                 Eject
                               </button>
                             </div>
+                            {(() => {
+                              const dur = selectedLive.equipmentDurability?.[slot] ?? 100;
+                              if (dur < 100) {
+                                return (
+                                  <div className="pt-2">
+                                    <div className="flex justify-between text-[8px] font-black uppercase mb-1">
+                                      <span className={dur < 30 ? 'text-rose-500' : 'text-stone-500'}>Condition: {dur}%</span>
+                                      <button 
+                                        onClick={() => repairItem(selectedLive.id, slot)}
+                                        className="text-primary hover:text-white transition-colors"
+                                      >
+                                        Repair
+                                      </button>
+                                    </div>
+                                    <div className="h-1 bg-black/40 rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full transition-all ${dur < 30 ? 'bg-rose-500' : 'bg-primary'}`}
+                                        style={{ width: `${dur}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
                           </div>
                         ) : (
                           <div className="py-4 text-center">

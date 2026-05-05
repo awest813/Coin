@@ -3,6 +3,7 @@ import type { Item } from '~/types/item';
 interface Props {
   item: Item;
   count?: number;
+  durability?: number;
 }
 
 const RARITY_STYLES: Record<string, { text: string; border: string; bg: string; glow?: string }> = {
@@ -57,6 +58,20 @@ export function ItemCard({ item, count }: Props) {
                   {tag.replace('_', ' ')}
                 </span>
               ))}
+            </div>
+          )}
+          {durability !== undefined && durability < 100 && (
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-[8px] font-black uppercase text-stone-500">
+                <span>Condition</span>
+                <span className={durability < 30 ? 'text-rose-500' : ''}>{durability}%</span>
+              </div>
+              <div className="h-1 bg-black/40 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all ${durability < 30 ? 'bg-rose-500' : 'bg-primary'}`}
+                  style={{ width: `${durability}%` }}
+                />
+              </div>
             </div>
           )}
           <p className="text-xs text-stone-500 mt-1">💰 {item.value}g sale value</p>

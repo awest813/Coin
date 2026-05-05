@@ -47,6 +47,7 @@ export interface Mercenary {
   traits: Trait[];
   relationships: Relationship[];
   equipment: Partial<Record<EquipmentSlot, string>>; // item IDs
+  equipmentDurability?: Partial<Record<EquipmentSlot, number>>; // 0-100
   isInjured: boolean;
   isFatigued: boolean;
   /** 0-10 morale; low morale imposes mission penalties */

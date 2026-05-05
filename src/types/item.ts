@@ -30,4 +30,7 @@ export interface Item {
   statBonus?: Partial<Record<'strength' | 'agility' | 'intellect' | 'presence', number>>;
   /** gold value */
   value: number;
+  /** Current durability (0-max). If missing, item is indestructible. */
+  durability?: number;
+  maxDurability?: number;
 }

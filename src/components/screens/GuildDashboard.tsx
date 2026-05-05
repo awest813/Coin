@@ -20,17 +20,7 @@ const WEATHER_ICON: Record<WeatherId, string> = {
 };
 
 export function GuildDashboard() {
-  const {
-    guild,
-    mercenaries,
-    activeMissions,
-    resetSave,
-    setScreen,
-    upgradeRoom,
-    pendingEvents,
-    resolveEventChoice,
-    items,
-  } = useGameStore();
+  const { guild, activeMissions, mercenaries, pendingEvents, currentTime, tick, investInBusiness, setScreen, upgradeRoom, resolveEventChoice, items } = useGameStore();
 
   const availableMercs = mercenaries.filter((m) => !m.isInjured && !m.isFatigued);
   const injuredMercs = mercenaries.filter((m) => m.isInjured);
@@ -231,7 +221,73 @@ export function GuildDashboard() {
         </section>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Guild Business & Passive Income */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 premium-card flex flex-col md:flex-row items-center justify-between gap-8 p-10 bg-primary/[0.03]">
+          <div className="flex items-center gap-8">
+            <div className="w-24 h-24 rounded-[2rem] bg-primary/10 flex items-center justify-center text-5xl shadow-inner border border-primary/20 rotate-3">🏢</div>
+            <div>
+              <h3 className="text-2xl font-bold text-white font-heading">Guild Business Ventures</h3>
+              <p className="text-stone-500 text-xs italic font-serif mt-1">"A guild that doesn't grow, dies."</p>
+              <div className="flex gap-4 mt-4">
+                <div className="px-3 py-1.5 rounded-xl bg-black/40 border border-white/5 flex flex-col">
+                  <span className="text-[8px] text-stone-600 font-black uppercase tracking-widest">Level</span>
+                  <span className="text-primary font-bold">{guild.businessLevel}</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-black/40 border border-white/5 flex flex-col">
+                  <span className="text-[8px] text-stone-600 font-black uppercase tracking-widest">Efficiency</span>
+                  <span className="text-primary font-bold">+{guild.businessLevel * 10}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-center md:items-end gap-4">
+            <div className="text-right hidden md:block">
+              <div className="text-[10px] text-stone-600 font-black uppercase tracking-[0.2em] mb-1">Investment Cost</div>
+              <div className="text-xl font-bold text-white">{500 + (guild.businessLevel * 500)}g</div>
+            </div>
+            <button 
+              onClick={investInBusiness}
+              disabled={guild.resources.gold < (500 + (guild.businessLevel * 500))}
+              className="px-8 py-4 rounded-2xl bg-primary text-stone-950 font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed haptic-click"
+            >
+              Expand Business
+            </button>
+          </div>
+        </div>
+
+        <div className="premium-card p-10 space-y-8">
+          <h3 className="text-[10px] font-black text-stone-600 uppercase tracking-[0.3em]">Projected Yield</h3>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">💰</span>
+                <span className="text-xs font-bold text-stone-300">Net Gold / sec</span>
+              </div>
+              <span className="font-mono text-emerald-400 font-bold">
+                +{(guild.rooms.reduce((s, r) => s + getRoomEffect(r, 'passiveGold'), 0) * (1 + (guild.guildRank - 1) * 0.2) * (1 + (guild.businessLevel * 0.1))).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🧴</span>
+                <span className="text-xs font-bold text-stone-300">Net Supplies / sec</span>
+              </div>
+              <span className={`font-mono font-bold ${((guild.rooms.reduce((s, r) => s + getRoomEffect(r, 'passiveSupplies'), 0) * (1 + (guild.guildRank - 1) * 0.2) * (1 + (guild.businessLevel * 0.1))) - (mercenaries.length * 0.01)) >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+                {((guild.rooms.reduce((s, r) => s + getRoomEffect(r, 'passiveSupplies'), 0) * (1 + (guild.guildRank - 1) * 0.2) * (1 + (guild.businessLevel * 0.1))) - (mercenaries.length * 0.01)).toFixed(2)}
+              </span>
+            </div>
+            <div className="pt-4 border-t border-white/5">
+              <p className="text-[9px] text-stone-600 leading-relaxed font-black uppercase tracking-widest">
+                Roster Maintenance: -{(mercenaries.length * 0.01).toFixed(2)} supplies/sec
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* Left Column: Events & Active Missions */}
         <div className="lg:col-span-1 space-y-6">
           {/* Pending Events */}
@@ -451,9 +507,9 @@ export function GuildDashboard() {
                   </div>
                 ))}
               </div>
-           </div>
-        </div>
-      </div>
+            </div>
+         </div>
+      </section>
 
       {/* Reset with minimal presence */}
       <div className="pt-12 text-center opacity-20 hover:opacity-100 transition-opacity">

@@ -97,4 +97,8 @@ export interface Guild {
   guildMorale: number;
   /** Consumable stockpile for auto-deployment. Item ID → quantity. */
   consumableStockpile: Record<string, number>;
+  /** Map of inventory index → durability (0-100) */
+  inventoryDurability: Record<number, number>;
+  /** Level of guild investments, boosts passive income. */
+  businessLevel: number;
 }
