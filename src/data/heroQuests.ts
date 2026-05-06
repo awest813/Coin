@@ -40,10 +40,10 @@ export const HERO_QUESTS: HeroQuest[] = [
         narrative: '"A merchant train is being ambushed two miles east of here," Valerius says calmly. "If you send your best to save them, I will know your heart is true. But beware, the ambush is not what it seems."',
         choices: [
           {
-            label: 'Send a rescue party (Presence check)',
-            requirement: { stat: 'presence', value: 7 },
+            label: 'Negotiate the release (Negotiation check)',
+            requirement: { type: 'skill', stat: 'negotiation', value: 20 },
             outcome: {
-              text: 'Your party arrives just in time. Through sheer authority, they rally the merchants and repel the bandits. Valerius nods as you return. "You lead not just with gold, but with will. I shall join you."',
+              text: 'Using silvered words and guild reputation, you resolve the conflict without a single blade drawn. Valerius nods as you return. "You lead with more than just gold. I shall join you."',
               success: true,
             },
           },
@@ -75,10 +75,10 @@ export const HERO_QUESTS: HeroQuest[] = [
         narrative: 'Deep in the clockwork sectors of the City Below, you find a young woman flicking in and out of existence. She looks terrified, her form blurring like smoke.',
         choices: [
           {
-            label: 'Try to stabilize her (Intellect check)',
-            requirement: { stat: 'intellect', value: 8 },
+            label: 'Perform an Arcane anchor (Arcana check)',
+            requirement: { type: 'skill', stat: 'arcana', value: 15 },
             outcome: {
-              text: 'Using a combination of ancient theory and quick thinking, you manage to ground her form. She gasps, her eyes clearing. "Thank you. The rifts... they were pulling me under."',
+              text: 'Using a combination of arcane theory and quick thinking, you manage to ground her form. She gasps, her eyes clearing. "Thank you. The rifts... they were pulling me under."',
               nextStageId: 'saria_2',
               success: true,
             },

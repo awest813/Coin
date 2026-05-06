@@ -114,13 +114,23 @@ export function Market() {
                       <div className={`text-sm font-bold ${canAfford ? 'text-primary' : 'text-rose-500'}`}>{buyPrice}g</div>
                       <div className="text-[8px] text-stone-600 font-black uppercase tracking-tighter">Cost per unit</div>
                     </div>
-                    <button
-                      onClick={() => buyMaterial(mat.id, 1, buyPrice)}
-                      disabled={!canAfford}
-                      className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black uppercase text-stone-400 hover:text-white hover:bg-primary hover:text-stone-950 hover:border-primary disabled:opacity-20 disabled:cursor-not-allowed transition-all haptic-click"
-                    >
-                      Buy
-                    </button>
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => buyMaterial(mat.id, 1, buyPrice)}
+                        disabled={!canAfford}
+                        className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black uppercase text-stone-400 hover:text-white hover:bg-primary hover:text-stone-950 hover:border-primary disabled:opacity-20 disabled:cursor-not-allowed transition-all haptic-click"
+                      >
+                        Buy x1
+                      </button>
+                      {guild.resources.gold >= buyPrice * 5 && (
+                        <button
+                          onClick={() => buyMaterial(mat.id, 5, buyPrice)}
+                          className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black uppercase text-stone-500 hover:text-white hover:bg-primary/80 hover:text-stone-950 transition-all haptic-click"
+                        >
+                          Buy x5
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -163,19 +173,27 @@ export function Market() {
                         <div className="text-sm font-bold text-emerald-400">{sellPrice}g</div>
                         <div className="text-[8px] text-stone-600 font-black uppercase tracking-tighter">Sale Price</div>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex flex-col gap-1">
                         <button
                           onClick={() => sellMaterial(mat.id, 1, sellPrice)}
-                          className="px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black uppercase text-stone-400 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 transition-all haptic-click"
+                          className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black uppercase text-stone-400 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 transition-all haptic-click"
                         >
-                          x1
+                          Sell x1
                         </button>
                         {qty >= 5 && (
                           <button
                             onClick={() => sellMaterial(mat.id, 5, sellPrice)}
-                            className="px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black uppercase text-stone-400 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 transition-all haptic-click"
+                            className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black uppercase text-stone-500 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 transition-all haptic-click"
                           >
-                            x5
+                            Sell x5
+                          </button>
+                        )}
+                        {qty >= 25 && (
+                          <button
+                            onClick={() => sellMaterial(mat.id, 25, sellPrice)}
+                            className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black uppercase text-stone-600 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 transition-all haptic-click"
+                          >
+                            Sell x25
                           </button>
                         )}
                       </div>

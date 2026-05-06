@@ -33,6 +33,9 @@ export const INITIAL_MERCENARIES: Mercenary[] = [
     morale: 7,
     loyalty: 8,
     missionsCompleted: 0,
+    level: 1,
+    classRole: 'Vanguard',
+    skills: { tactics: 15, survival: 5, arcana: 0 },
   },
   {
     id: 'merc_syla',
@@ -66,6 +69,9 @@ export const INITIAL_MERCENARIES: Mercenary[] = [
     morale: 8,
     loyalty: 7,
     missionsCompleted: 0,
+    level: 1,
+    classRole: 'Infiltrator',
+    skills: { subterfuge: 25, survival: 10, arcana: 0 },
   },
   {
     id: 'merc_oryn',
@@ -99,6 +105,9 @@ export const INITIAL_MERCENARIES: Mercenary[] = [
     morale: 6,
     loyalty: 6,
     missionsCompleted: 0,
+    level: 1,
+    classRole: 'Scholar',
+    skills: { survival: 15, negotiation: 20, arcana: 10 },
   },
   {
     id: 'merc_bram',
@@ -132,6 +141,9 @@ export const INITIAL_MERCENARIES: Mercenary[] = [
     morale: 5,
     loyalty: 5,
     missionsCompleted: 0,
+    level: 1,
+    classRole: 'Slayer',
+    skills: { tactics: 20, subterfuge: 5, arcana: 0 },
   },
   {
     id: 'merc_petra',

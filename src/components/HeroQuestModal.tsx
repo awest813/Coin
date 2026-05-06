@@ -89,7 +89,12 @@ export function HeroQuestModal() {
                       {currentStage.choices.map((choice, idx) => {
                         const hasReq = !!choice.requirement;
                         const meetsReq = hasReq 
-                          ? mercenaries.some(m => m.stats[choice.requirement!.stat] >= choice.requirement!.value)
+                          ? mercenaries.some(m => {
+                              if (choice.requirement!.type === 'skill') {
+                                return (m.skills?.[choice.requirement!.stat as keyof NonNullable<typeof m.skills>] ?? 0) >= choice.requirement!.value;
+                              }
+                              return (m.stats[choice.requirement!.stat as keyof typeof m.stats] ?? 0) >= choice.requirement!.value;
+                            })
                           : true;
 
                         return (

@@ -18,6 +18,7 @@ const NAV_ITEMS: { id: ActiveScreen; label: string; icon: string }[] = [
   { id: 'customization', label: 'Custom Hall', icon: '🎭' },
   { id: 'policies', label: 'Policies', icon: '📜' },
   { id: 'market', label: 'Market', icon: '⚖️' },
+  { id: 'settings', label: 'Archives', icon: '⚙️' },
 ];
 
 export function getFeatureUnlockRank(id: ActiveScreen): number {
@@ -65,11 +66,16 @@ export function NavBar() {
           <div className="flex flex-col">
             <h1 className="text-white font-black font-heading tracking-tighter flex items-center gap-3 leading-none text-xl text-glow">
               {guild.name}
+              {useGameStore.getState().campaignActive && (
+                <span className="px-2 py-0.5 rounded-md bg-rose-600/20 border border-rose-500/40 text-[8px] font-black text-rose-500 uppercase tracking-widest animate-pulse">
+                  The Final Path
+                </span>
+              )}
               {pendingEvents.length > 0 && (
                 <span className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
               )}
             </h1>
-            <span className="text-stone-500 text-[9px] uppercase tracking-[0.4em] font-black mt-2 opacity-60">RANK {guild.guildRank} SOVEREIGN GUILD</span>
+            <span className="text-stone-500 text-[9px] uppercase tracking-[0.4em] font-black mt-2 opacity-60">RANK {guild.guildRank} {useGameStore.getState().campaignActive ? 'LEGENDARY' : 'SOVEREIGN'} GUILD</span>
           </div>
         </div>
 

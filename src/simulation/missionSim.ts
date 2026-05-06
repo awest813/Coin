@@ -93,7 +93,23 @@ function scoreMercDetailed(
   if (merc.morale < 3) statusPenalty += 2;
   else if (merc.morale < 5) statusPenalty += 1;
 
-  const total = Math.max(0, baseScore + traitBonus + relBonus - statusPenalty);
+  // Weapon Specialization Bonuses
+  let weaponBonus = 0;
+  const equipped = getEquippedItems(merc, durability);
+  const weapons = equipped.filter(i => i.item.category === 'weapon');
+  
+  for (const w of weapons) {
+    const type = w.item.weaponType;
+    if (!type) continue;
+
+    for (const tag of template.tags) {
+      if (type === 'ranged' && (tag === 'hunt' || tag === 'stealth')) weaponBonus += 2;
+      if (type === 'magic' && (tag === 'ruin' || tag === 'exploration')) weaponBonus += 2;
+      if (type === 'melee' && (tag === 'combat' || tag === 'escort')) weaponBonus += 1.5;
+    }
+  }
+
+  const total = Math.max(0, baseScore + traitBonus + relBonus + weaponBonus - statusPenalty);
 
   return {
     mercName: merc.name,
@@ -101,6 +117,7 @@ function scoreMercDetailed(
     traitBonus,
     equipBonus,
     relBonus,
+    weaponBonus, // Add to breakdown
     statusPenalty,
     total,
   };
@@ -199,6 +216,30 @@ function computeSynergies(mercs: Mercenary[]): SynergyBonus[] {
       description: 'Tactical planning meets raw physical force.'
     });
   }
+  
+  // 4. Role Synergies
+  const roles = mercs.map(m => m.classRole).filter(Boolean);
+  if (roles.includes('Vanguard') && roles.includes('Scholar')) {
+    synergies.push({
+      name: 'Tactical Shielding',
+      scoreBonus: 3,
+      description: 'Scholar foresight guides the Vanguard shield.'
+    });
+  }
+  if (roles.includes('Infiltrator') && roles.includes('Street Thief')) {
+    synergies.push({
+      name: 'Shadow Network',
+      scoreBonus: 3,
+      description: 'Coordinated stealth from two masters of the dark.'
+    });
+  }
+  if (roles.includes('Slayer') && roles.includes('Hedge Witch')) {
+    synergies.push({
+      name: 'Eldritch Might',
+      scoreBonus: 3.5,
+      description: 'Witch-fire coats the Slayer\'s blade.'
+    });
+  }
 
   return synergies;
 }
@@ -249,19 +290,35 @@ export function simulateMission(
   }, 0);
   partyScore += successMod;
 
-  // Perk Modifier: pale_border_veterans (+1 score in Pale Border)
+  // Perk Modifier: pale_border_veterans (+1.5 score in Pale Border)
   if (activePerks.has('pale_border_veterans') && template.region === 'Pale Border') {
+    partyScore += 1.5;
+  }
+  // Perk Modifier: ashfen_navigators (reduces fatigue risk in Ashfen Marsh)
+  if (activePerks.has('ashfen_navigators') && template.region === 'Ashfen Marsh') {
+    fatigueProtection += 0.2;
+  }
+  // Perk Modifier: grey_mountain_miners (+1 score on Ruin missions)
+  if (activePerks.has('grey_mountain_miners') && template.tags.includes('ruin')) {
     partyScore += 1;
+  }
+  // Perk Modifier: mountain_hardened (-15% injury chance on combat/hunt)
+  if (activePerks.has('mountain_hardened') && (template.tags.includes('combat') || template.tags.includes('hunt'))) {
+    injuryProtection += 0.15;
+  }
+  // Perk Modifier: peaks_sovereign_clue (+10% success margin on all Campaign missions)
+  if (activePerks.has('peaks_sovereign_clue') && template.isCampaign) {
+    partyScore += 2; // Assuming ~20 is high score, +2 is ~10%
   }
 
   // Guild Morale Modifier
   const morale = options.guildMorale ?? 50;
   let moraleInjuryPenalty = 0;
   if (morale >= 80) {
-    partyScore *= 1.05; // High morale: +5% party score
+    partyScore *= 1.10; // High morale: +10% party score (Buffed from 5%)
   } else if (morale < 30) {
-    partyScore *= 0.95; // Low morale: -5% party score
-    moraleInjuryPenalty = 0.10; // Low morale: +10% injury chance
+    partyScore *= 0.85; // Low morale: -15% party score (Nerfed from 5%)
+    moraleInjuryPenalty = 0.15; // Low morale: +15% injury chance
   }
 
   // Artifact Modifier: injury_chance & fatigue_chance (Reduction)
@@ -350,6 +407,21 @@ export function simulateMission(
 
   const narrativeEvents = pickEventSnippets(template, outcome, seed, mercs);
 
+  // ── Skill Growth ──────────────────────────────────────────────────────────
+  const skillXP: Record<string, Record<string, number>> = {};
+  const xpBase = outcome === 'success' ? 5 : outcome === 'partial' ? 2 : 1;
+  
+  for (const merc of mercs) {
+    const mercXP: Record<string, number> = {};
+    for (const tag of template.tags) {
+      if (['combat', 'escort'].includes(tag)) mercXP.tactics = (mercXP.tactics ?? 0) + xpBase;
+      if (['exploration', 'hunt', 'ruin'].includes(tag)) mercXP.survival = (mercXP.survival ?? 0) + xpBase;
+      if (['stealth', 'bounty'].includes(tag)) mercXP.subterfuge = (mercXP.subterfuge ?? 0) + xpBase;
+      if (['social'].includes(tag)) mercXP.negotiation = (mercXP.negotiation ?? 0) + xpBase;
+    }
+    skillXP[merc.id] = mercXP;
+  }
+
   return {
     missionRunId: seed,
     templateId: template.id,
@@ -365,6 +437,7 @@ export function simulateMission(
     difficulty: template.difficulty,
     scoreBreakdown,
     synergies,
+    skillXP,
     narrativeEvents,
     durabilityLoss: mercs.map(m => {
       const loss: Partial<Record<EquipmentSlot, number>> = {};

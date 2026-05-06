@@ -59,7 +59,7 @@ export function MercCard({ merc, selected, onClick, compact }: Props) {
               } ${selected ? 'text-lg text-glow' : 'text-base group-hover:text-primary'}`}>
                 {merc.name}
               </h4>
-              <p className="text-stone-500 text-[9px] uppercase tracking-[0.25em] font-black">{merc.title}</p>
+              <p className="text-stone-500 text-[9px] uppercase tracking-[0.25em] font-black">{merc.classRole || merc.title}</p>
             </div>
             <div className="text-right">
                <div className={`text-xs font-black ${MORALE_COLOR(merc.morale)} drop-shadow-sm`}>♥ {merc.morale}</div>

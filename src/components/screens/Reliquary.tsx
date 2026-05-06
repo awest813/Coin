@@ -46,9 +46,16 @@ export function Reliquary() {
            </div>
            <div className="w-px h-10 bg-white/5" />
            <div className="flex -space-x-3">
-              {ARTIFACTS.map(a => (
-                <div key={a.id} className={`w-10 h-10 rounded-full border-2 border-stone-900 bg-stone-800 flex items-center justify-center text-sm transition-opacity duration-500 ${unlockedArtifactIds.includes(a.id) ? 'opacity-100' : 'opacity-20'}`}>
-                  {a.icon}
+               {ARTIFACTS.map(a => (
+                <div 
+                  key={a.id} 
+                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm transition-all duration-500 ${
+                    unlockedArtifactIds.includes(a.id) 
+                      ? 'border-amber-500/50 bg-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.3)]' 
+                      : 'border-white/5 bg-stone-900/50 opacity-40'
+                  }`}
+                >
+                  {unlockedArtifactIds.includes(a.id) ? a.icon : '❓'}
                 </div>
               ))}
            </div>
@@ -66,6 +73,8 @@ export function Reliquary() {
               className={`group relative glass-dark rounded-[3.5rem] border-2 p-10 transition-all duration-700 flex flex-col ${
                 isUnlocked 
                 ? 'border-amber-500/30 bg-amber-500/[0.02] shadow-[0_20px_50px_rgba(0,0,0,0.3),inset_0_0_60px_rgba(245,158,11,0.05)]' 
+                : craftable
+                ? 'border-amber-500/20 bg-amber-500/[0.01] animate-pulse-subtle cursor-pointer'
                 : 'border-white/5 hover:border-white/10'
               }`}
             >

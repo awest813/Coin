@@ -56,6 +56,18 @@ export interface Mercenary {
   loyalty: number;
   /** missions completed */
   missionsCompleted: number;
+  /** Character level (1-10) */
+  level: number;
+  /** Professional identity: Vanguard, Scout, Scholar, etc. */
+  classRole?: string;
+  /** Specialized proficiencies (0-100) */
+  skills?: {
+    tactics?: number;      // Combat/Escort bonus
+    survival?: number;     // Exploration/Hunt bonus
+    subterfuge?: number;   // Stealth/Bounty bonus
+    negotiation?: number;  // Social bonus
+    arcana?: number;       // Magic/Ruin bonus
+  };
   /** Optional flavor text line shown on detail panel */
   background?: string;
   /** Bond scores with other mercs: mercId -> -10 to +10 */

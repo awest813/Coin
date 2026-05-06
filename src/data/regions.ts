@@ -151,6 +151,29 @@ export const REGION_DATA: RegionData[] = [
       },
     ],
   },
+  {
+    id: 'sovereign_keep',
+    name: 'Sovereign Keep',
+    icon: '🏰',
+    description: 'The ancient seat of power. Reclaiming it marks the end of an era.',
+    flavorText: '"The Keep is more than stone and mortar. It is the heart of the world."',
+    biome: 'city',
+    relevantTags: ['combat', 'campaign', 'social'],
+    milestones: [
+      {
+        threshold: 50,
+        perkId: 'sovereign_authority',
+        label: 'Sovereign Authority',
+        description: 'Global gold gain increased by 25%.',
+      },
+      {
+        threshold: 100,
+        perkId: 'sovereign_legacy',
+        label: 'Eternal Legacy',
+        description: 'Renown gain increased by 50%. All mercenaries gain +1 to all stats.',
+      },
+    ],
+  },
 ];
 
 /** Map region name -> region data for O(1) lookup */

@@ -12,6 +12,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     difficulty: 7,
     durationLabel: '2 days',
     durationSeconds: 60,
+    recommendedClasses: ['Vanguard', 'Former Guard'],
     reward: {
       gold: 80,
       renown: 5,
@@ -42,6 +43,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     difficulty: 9,
     durationLabel: '3 days',
     durationSeconds: 90,
+    recommendedClasses: ['Disgraced Noble', 'Vanguard'],
     reward: {
       gold: 110,
       renown: 8,
@@ -72,6 +74,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     difficulty: 5,
     durationLabel: '3 days',
     durationSeconds: 90,
+    recommendedClasses: ['Scout', 'Hedge Witch'],
     reward: {
       gold: 50,
       renown: 8,
@@ -132,6 +135,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     difficulty: 11,
     durationLabel: '1 day',
     durationSeconds: 30,
+    recommendedClasses: ['Scout', 'Street Thief'],
     reward: {
       gold: 120,
       renown: 12,
@@ -192,6 +196,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
     difficulty: 13,
     durationLabel: '2 days',
     durationSeconds: 60,
+    recommendedClasses: ['Vanguard', 'Slayer'],
     reward: {
       gold: 150,
       renown: 14,
@@ -526,6 +531,68 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
       success: 'The fissure is sealed. The sector is quiet again, though the shadows still feel too long.',
       partial: 'The leak is contained but not sealed. A permanent guard will be required.',
       failure: 'The entropy spread too fast. The entire sector has been abandoned.',
+    },
+  },
+  // ── Bridge / Peak Missions (Smoothing the Curve) ──────────────────────────────
+  {
+    id: 'mission_high_pass',
+    name: 'The High Pass Toll',
+    region: 'Grey Mountains',
+    description: 'A group of rogue knights has seized the High Pass. They are charging exorbitant rates and disrupting imperial trade.',
+    tags: ['combat', 'social'],
+    difficulty: 14,
+    durationLabel: '3 days',
+    durationSeconds: 90,
+    recommendedClasses: ['Vanguard', 'Diplomat'],
+    reward: {
+      gold: 280,
+      renown: 25,
+      possibleItems: ['knight_seal', 'soldier_sword', 'reinforced_shield'],
+    },
+    flavorText: {
+      success: 'The rogue knights were removed. Some were convinced of their error; others were dealt with. The pass is open.',
+      partial: 'The knights were driven off but the pass remains contested. Merchants still feel uneasy.',
+      failure: 'The rogue knights were too well-entrenched. The party was forced to retreat under a hail of bolts.',
+    },
+  },
+  {
+    id: 'mission_ancient_titan',
+    name: 'The Sleeping Titan',
+    region: 'Whispering Peaks',
+    description: 'An ancient construct has stirred in the Peaks. Its movements are causing landslides. Silence it before a village is buried.',
+    tags: ['combat', 'ruin'],
+    difficulty: 18,
+    durationLabel: '5 days',
+    durationSeconds: 150,
+    reward: {
+      gold: 1200,
+      renown: 80,
+      possibleItems: ['titan_core', 'ancient_battery', 'pure_iron'],
+    },
+    flavorText: {
+      success: 'The titan has been returned to its slumber. The peaks are silent once more.',
+      partial: 'We disabled its legs, stopping the movement, but the core is still active and humming.',
+      failure: 'The titan was too massive. Our attacks barely scratched the surface. We had to evacuate the village.',
+    },
+  },
+  {
+    id: 'mission_sovereign_assault_final',
+    name: 'The Keep\'s Heart',
+    region: 'Sovereign Keep',
+    description: 'The final push. The inner sanctum of the Keep is guarded by the remnants of the old guard. Take the throne.',
+    tags: ['combat', 'campaign'],
+    difficulty: 20,
+    durationLabel: '7 days',
+    durationSeconds: 210,
+    reward: {
+      gold: 2500,
+      renown: 150,
+      possibleItems: ['kings_crown', 'sovereign_seal', 'ancient_banner'],
+    },
+    flavorText: {
+      success: 'The Keep is yours. The throne room is silent, but the cheers of the town below reach the rafters.',
+      partial: 'We took the throne room, but the old guard retreated to the lower dungeons. The Keep is ours, for now.',
+      failure: 'The old guard was unbreakable. We reached the throne but were driven back. The assault must be regrouped.',
     },
   },
 ];

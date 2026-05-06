@@ -177,6 +177,9 @@ export function MercenaryRoster() {
                   </div>
                   <p className={`${selectedLive.isLegendary ? 'text-amber-500/80' : 'text-primary'} text-[10px] font-black uppercase tracking-[0.2em]`}>{selectedLive.title}</p>
                   <div className="mt-2 flex gap-2">
+                    <span className="stat-badge bg-white/5 border-white/5 text-[9px] text-stone-300">
+                      LVL {selectedLive.level ?? 1}
+                    </span>
                     <span className="stat-badge bg-white/5 border-white/5 text-[9px] text-stone-500">
                       {selectedLive.missionsCompleted} Deployments Complete
                     </span>
@@ -222,7 +225,7 @@ export function MercenaryRoster() {
                   </div>
                   <div className="flex justify-between text-[9px] text-stone-500 font-medium">
                     <span>{Math.floor(selectedLive.trainingProgress ?? 0)}% complete</span>
-                    <span>Each 100% grants +0.1 stat point</span>
+                    <span>Each 100% grants +1 stat point & level up</span>
                   </div>
                 </div>
               )}
@@ -248,6 +251,64 @@ export function MercenaryRoster() {
                   </button>
                 </div>
               )}
+
+              {/* Prestige Section */}
+              {!selectedLive.isLegendary && (
+                <div className="p-6 glass rounded-[2rem] border-amber-500/20 bg-amber-500/5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Heroic Ascension
+                    </h4>
+                    <span className="text-[9px] font-black text-stone-500 uppercase">Cost: 250 Renown</span>
+                  </div>
+                  <p className="text-[11px] text-stone-400 italic leading-relaxed">
+                    Once a mercenary has seen 20 deployments, they can ascend to Legendary status, gaining a unique trait and permanent stat boosts.
+                  </p>
+                  <button
+                    onClick={() => useGameStore.getState().prestigeMercenary(selectedLive.id)}
+                    disabled={selectedLive.missionsCompleted < 20 || guild.resources.renown < 250}
+                    className={`w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all haptic-click ${
+                      selectedLive.missionsCompleted >= 20 && guild.resources.renown >= 250
+                        ? 'bg-amber-500 text-stone-950 shadow-lg shadow-amber-500/20 hover:scale-[1.02]'
+                        : 'bg-stone-800 text-stone-600 border border-white/5 cursor-not-allowed'
+                    }`}
+                  >
+                    {selectedLive.missionsCompleted < 20 
+                      ? `${20 - selectedLive.missionsCompleted} MORE DEPLOYMENTS NEEDED` 
+                      : guild.resources.renown < 250 
+                      ? 'INSUFFICIENT RENOWN' 
+                      : 'ASCEND TO LEGEND'}
+                  </button>
+                </div>
+              )}
+
+              {/* Professional Proficiencies (Skills) */}
+              <div className="p-6 glass-dark rounded-[2.5rem] border border-white/5 space-y-6">
+                 <h4 className="text-[10px] font-black text-stone-500 uppercase tracking-widest px-1">Professional Proficiencies</h4>
+                 <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { id: 'tactics', label: 'Tactics & Warfare', value: selectedLive.skills?.tactics ?? 0, color: 'bg-rose-500' },
+                      { id: 'survival', label: 'Wilderness Survival', value: selectedLive.skills?.survival ?? 0, color: 'bg-emerald-500' },
+                      { id: 'subterfuge', label: 'Infiltration & Stealth', value: selectedLive.skills?.subterfuge ?? 0, color: 'bg-sky-500' },
+                      { id: 'negotiation', label: 'Social Negotiation', value: selectedLive.skills?.negotiation ?? 0, color: 'bg-amber-500' },
+                      { id: 'arcana', label: 'Arcane Mastery', value: selectedLive.skills?.arcana ?? 0, color: 'bg-violet-500' },
+                    ].map(skill => (
+                      <div key={skill.id} className="space-y-2">
+                         <div className="flex justify-between items-end">
+                            <span className="text-[10px] font-bold text-white uppercase tracking-tight">{skill.label}</span>
+                            <span className="text-[10px] font-mono text-stone-500">LVL {Math.floor(skill.value / 10)} // {skill.value.toFixed(1)}%</span>
+                         </div>
+                         <div className="h-1 bg-black/60 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${skill.color} transition-all duration-1000 shadow-[0_0_8px_rgba(255,255,255,0.1)]`}
+                              style={{ width: `${skill.value % 10 * 10}%` }}
+                            />
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+              </div>
             </div>
 
             {/* Right Column: Stats & Gear */}
@@ -383,13 +444,27 @@ export function MercenaryRoster() {
                         {selectedLive.isTraining ? 'Stop Drill' : 'Start Training'}
                       </button>
                     </div>
+                    {barracksRoom && (
+                      <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-[8px] font-black text-stone-600 uppercase tracking-widest">
+                         <span>Facility Tier: {barracksRoom.level} ({barracksRoom.name})</span>
+                         <span className="text-primary">XP Multiplier: x{(1 + (barracksRoom.level - 1) * 0.25).toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Equipment Grid */}
               <div className="space-y-4">
-                <h4 className="text-[10px] font-black text-stone-600 uppercase tracking-widest px-1">Combat Loadout</h4>
+                <div className="flex justify-between items-end px-1">
+                  <h4 className="text-[10px] font-black text-stone-600 uppercase tracking-widest">Combat Loadout</h4>
+                  <button
+                    onClick={() => useGameStore.getState().autoEquipMercenary(selectedLive.id)}
+                    className="text-[9px] font-black text-primary uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1 haptic-click"
+                  >
+                    <span>⚡ Auto-Equip Optimized</span>
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {SLOTS.map(({ slot, label, icon }) => {
                     const itemId = selectedLive.equipment[slot];

@@ -88,25 +88,50 @@ export function ResultsModal() {
              ))}
           </section>
 
-          {/* Synergies Activated */}
-          {synergies.length > 0 && (
-             <section className="animate-in slide-in-from-left-4 duration-700">
-                <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                   <span className="text-xl icon-premium">⚡</span> Tactical Synergies
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                   {synergies.map(s => (
-                      <div key={s.name} className="p-4 bg-primary/5 border border-primary/20 rounded-2xl relative overflow-hidden group">
-                         <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-black text-white text-glow">{s.name}</span>
-                            <span className="text-xs font-black text-primary">+{s.scoreBonus}</span>
-                         </div>
-                         <p className="text-[10px] text-stone-400 leading-tight italic">{s.description}</p>
-                      </div>
-                   ))}
-                </div>
-             </section>
-          )}
+          {/* Synergies & Modifiers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {synergies.length > 0 && (
+               <section className="animate-in slide-in-from-left-4 duration-700">
+                  <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                     <span className="text-xl icon-premium">⚡</span> Tactical Synergies
+                  </h4>
+                  <div className="grid grid-cols-1 gap-3">
+                     {synergies.map(s => (
+                        <div key={s.name} className="p-4 bg-primary/5 border border-primary/20 rounded-2xl relative overflow-hidden group">
+                           <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm font-black text-white text-glow">{s.name}</span>
+                              <span className="text-xs font-black text-primary">+{s.scoreBonus}</span>
+                           </div>
+                           <p className="text-[10px] text-stone-400 leading-tight italic">{s.description}</p>
+                        </div>
+                     ))}
+                  </div>
+               </section>
+            )}
+
+            <section className="animate-in slide-in-from-right-4 duration-700">
+               <h4 className="text-xs font-black text-amber-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                  <span className="text-xl icon-premium">💎</span> Strategic Analysis
+               </h4>
+               <div className="space-y-3">
+                  <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
+                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-stone-300">
+                        <span>Success Modifier</span>
+                        <span className="text-amber-500">+{(result.partyScore - result.scoreBreakdown.reduce((s, e) => s + e.total, 0) - (result.synergies?.reduce((s, sy) => s + sy.scoreBonus, 0) ?? 0)).toFixed(1)}</span>
+                     </div>
+                     <p className="text-[8px] text-stone-500 mt-1 italic leading-tight">Combined bonus from active artifacts, regional perks, and guild morale.</p>
+                  </div>
+                  <div className="flex gap-2">
+                     <span className="stat-badge text-[8px] bg-white/5 border-white/5 text-stone-500">
+                        📜 Global Rank {Math.floor(result.difficulty / 5) || 1}
+                     </span>
+                     <span className="stat-badge text-[8px] bg-white/5 border-white/5 text-stone-500">
+                        🗺️ Region Bonus Active
+                     </span>
+                  </div>
+               </div>
+            </section>
+          </div>
 
           {/* Primary Rewards */}
           <section className="grid grid-cols-3 gap-6">

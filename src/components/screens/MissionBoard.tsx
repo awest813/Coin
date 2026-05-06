@@ -318,9 +318,11 @@ export function MissionBoard() {
                         guildMorale: guild.guildMorale,
                       });
                       const margin = sim.partyScore - selectedMission.difficulty;
-                      if (margin >= 4) return 'EXCELLENT';
-                      if (margin >= 0) return 'LIKELY';
-                      return 'RISKY';
+                      if (margin >= 8) return 'EXCELLENT (100%)';
+                      if (margin >= 4) return 'GOOD (90%)';
+                      if (margin >= 0) return 'LIKELY (75%)';
+                      if (margin >= -4) return 'RISKY (50%)';
+                      return 'SUICIDAL (<25%)';
                     })()}
                   </div>
                 </div>

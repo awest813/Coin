@@ -81,6 +81,46 @@ export const RECIPES: Recipe[] = [
     description: 'Carved from prepared wood and etched with recovered sigils.',
     requiresForgeLevel: 3,
   },
+  {
+    id: 'hunting_bow_recipe',
+    name: 'Short Hunting Bow',
+    category: 'weapon',
+    outputItemId: 'hunting_bow',
+    goldCost: 12,
+    ingredients: [
+      { materialId: 'swamp_reed', quantity: 4 },
+      { materialId: 'tanned_hide', quantity: 2 },
+    ],
+    description: 'Flex-tested reeds and cured leather grip. Reliable and silent.',
+    requiresForgeLevel: 1,
+  },
+  {
+    id: 'worn_staff_recipe',
+    name: 'Worn Staff',
+    category: 'weapon',
+    outputItemId: 'worn_staff',
+    goldCost: 10,
+    ingredients: [
+      { materialId: 'ancient_wood', quantity: 2 },
+      { materialId: 'bone_fragment', quantity: 1 },
+    ],
+    description: 'Ancient wood tipped with bone. A crude but effective focus.',
+    requiresForgeLevel: 1,
+  },
+  {
+    id: 'witch_hunter_blade_recipe',
+    name: 'Witch-Hunter Blade',
+    category: 'weapon',
+    outputItemId: 'witch_hunter_blade',
+    goldCost: 45,
+    ingredients: [
+      { materialId: 'refined_steel', quantity: 2 },
+      { materialId: 'silver_dust', quantity: 3 },
+      { materialId: 'herbs_bundle', quantity: 2 },
+    ],
+    description: 'Steel treated with silver and bitter herbs. Deadly to the occult.',
+    requiresForgeLevel: 3,
+  },
   // ── Armor ─────────────────────────────────────────────────────────────────────
   {
     id: 'reinforced_mail_recipe',
@@ -159,6 +199,20 @@ export const RECIPES: Recipe[] = [
     ],
     description: 'Reed-stuffed quilted linen. Unglamorous but effective.',
     requiresForgeLevel: 1,
+  },
+  {
+    id: 'void_stitched_garb_recipe',
+    name: 'Void-Stitched Garb',
+    category: 'armor',
+    outputItemId: 'void_stitched_garb',
+    goldCost: 60,
+    ingredients: [
+      { materialId: 'star_silk', quantity: 1 },
+      { materialId: 'ancient_ink', quantity: 3 },
+      { materialId: 'rough_cloth', quantity: 5 },
+    ],
+    description: 'Linen soaked in ink and woven with star-silk. Offers protection against the unseen.',
+    requiresForgeLevel: 3,
   },
   // ── Consumables ───────────────────────────────────────────────────────────────
   {

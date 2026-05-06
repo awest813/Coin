@@ -15,6 +15,7 @@ import { DioramaShop } from '~/components/screens/DioramaShop';
 import { GuildPolicies } from '~/components/screens/GuildPolicies';
 import { Market } from '~/components/screens/Market';
 import { WarRoom } from '~/components/screens/WarRoom';
+import { Settings } from '~/components/screens/Settings';
 import { ResultsModal } from '~/components/ResultsModal';
 import { OfflineModal } from '~/components/OfflineModal';
 import { GuildScene } from '~/babylon/GuildScene';
@@ -51,6 +52,15 @@ function App() {
     }, 100);
     
     const interval = setInterval(tick, 1000);
+
+    // Phase 1 Welcome Toast
+    const state = useGameStore.getState();
+    if (state.guild.completedContracts === 0 && state.activeMissions.length === 0) {
+      setTimeout(() => {
+        state.addToast("Welcome, Commander. The Tarnished Banner is yours. Check the Contract Board to begin.", 'info');
+      }, 2000);
+    }
+
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
@@ -147,6 +157,7 @@ function App() {
           {activeScreen === 'policies' && <GuildPolicies />}
           {activeScreen === 'market' && <Market />}
           {activeScreen === 'warroom' && <WarRoom />}
+          {activeScreen === 'settings' && <Settings />}
         </main>
       </div>
       

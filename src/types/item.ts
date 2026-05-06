@@ -26,6 +26,8 @@ export interface Item {
   category: ItemCategory;
   /** Optional thematic tags that influence simulation or flavor */
   tags?: ItemTag[];
+  /** Categorization for combat skills: melee, ranged, magic */
+  weaponType?: 'melee' | 'ranged' | 'magic';
   /** stat bonuses when equipped */
   statBonus?: Partial<Record<'strength' | 'agility' | 'intellect' | 'presence', number>>;
   /** gold value */

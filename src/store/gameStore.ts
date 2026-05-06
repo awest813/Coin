@@ -51,10 +51,11 @@ export type ActiveScreen =
   | 'customization'
   | 'policies'
   | 'market'
-  | 'warroom';
+  | 'warroom'
+  | 'settings';
 
 // Guild rank thresholds (contracts completed)
-const RANK_THRESHOLDS = [0, 5, 15, 30, 50, 80, 120, 180, 260, 400];
+const RANK_THRESHOLDS = [0, 5, 12, 25, 45, 75, 120, 180, 260, 400];
 const RANK_NAMES = [
   'Scratch Crew',
   'Known Band',
@@ -134,6 +135,7 @@ interface GameState {
   // merc management
   updateMercenary: (merc: Mercenary) => void;
   equipItem: (mercId: string, slot: EquipmentSlot, inventoryIndex: number) => void;
+  autoEquipMercenary: (mercId: string) => void;
   unequipItem: (mercId: string, slot: EquipmentSlot) => void;
   restMercenary: (mercId: string) => void;
   // inventory management
@@ -187,9 +189,14 @@ interface GameState {
   unlockedStrategicAssetIds: string[];
   startCampaign: () => void;
   purchaseStrategicAsset: (assetId: string) => void;
+  prestigeMercenary: (mercId: string) => void;
   // toasts
   addToast: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
   dismissToast: (id: string) => void;
+  // data
+  resetGame: () => void;
+  exportSave: () => string;
+  importSave: (json: string) => boolean;
 }
 
 export interface GameToast {
@@ -211,22 +218,22 @@ const defaultRooms = (): RoomUpgrade[] => [
       {
         description: 'Basic bunks. Mercs recover from fatigue between missions.',
         effects: { rosterCap: 10, recoveryBonus: 0, passiveSupplies: 0.05 },
-        upgradeCost: { gold: 200, supplies: 10, renown: 5 },
+        upgradeCost: { gold: 150, supplies: 10, renown: 5 },
       },
       {
         description: 'Proper beds and a healer on rotation. Injuries heal faster.',
         effects: { rosterCap: 15, recoveryBonus: 1, passiveSupplies: 0.15 },
-        upgradeCost: { gold: 400, supplies: 20, renown: 15 },
+        upgradeCost: { gold: 300, supplies: 20, renown: 10 },
       },
       {
         description: 'Full infirmary wing. Mercs bounce back quickly.',
         effects: { rosterCap: 20, recoveryBonus: 2, passiveSupplies: 0.4 },
-        upgradeCost: { gold: 800, supplies: 40, renown: 30 },
+        upgradeCost: { gold: 800, supplies: 50, renown: 30 },
       },
       {
         description: 'Luxury Suites. Mercs rest in style. Supply production doubled.',
         effects: { rosterCap: 30, recoveryBonus: 3, passiveSupplies: 1.0 },
-        upgradeCost: { gold: 2000, supplies: 100, renown: 80 },
+        upgradeCost: { gold: 3500, supplies: 200, renown: 150 },
       },
       {
         description: 'The Hero\'s Rest. Legendary recovery speed. Industrial supply lines.',
@@ -246,22 +253,22 @@ const defaultRooms = (): RoomUpgrade[] => [
       {
         description: 'A hearth and a keg. Morale holds steady after tough missions.',
         effects: { moraleBonus: 0, eventChance: 0, passiveGold: 0.1 },
-        upgradeCost: { gold: 200, supplies: 15, renown: 5 },
+        upgradeCost: { gold: 150, supplies: 15, renown: 5 },
       },
       {
         description: 'Good food and music. Morale recovers faster. Stories spread.',
         effects: { moraleBonus: 1, eventChance: 1, passiveGold: 0.3 },
-        upgradeCost: { gold: 350, supplies: 25, renown: 12 },
+        upgradeCost: { gold: 300, supplies: 30, renown: 12 },
       },
       {
         description: 'Legendary hospitality. Mercs talk about this place in other towns.',
         effects: { moraleBonus: 2, eventChance: 2, passiveGold: 0.8 },
-        upgradeCost: { gold: 700, supplies: 50, renown: 25 },
+        upgradeCost: { gold: 900, supplies: 80, renown: 40 },
       },
       {
         description: 'Grand Gala Hall. Attracts wealthy patrons. Tax the locals.',
         effects: { moraleBonus: 3, eventChance: 4, passiveGold: 2.0 },
-        upgradeCost: { gold: 1500, supplies: 120, renown: 60 },
+        upgradeCost: { gold: 4500, supplies: 300, renown: 200 },
       },
       {
         description: 'The Golden Hearth. Infinite morale and constant revenue.',
@@ -309,7 +316,7 @@ const defaultRooms = (): RoomUpgrade[] => [
 
 const defaultGuild = (): Guild => ({
   name: 'The Tarnished Banner',
-  resources: { gold: 150, supplies: 20, renown: 0 },
+  resources: { gold: 300, supplies: 50, renown: 10 },
   inventoryItemIds: [],
   rooms: defaultRooms(),
   materials: {},
@@ -332,7 +339,7 @@ const defaultGuild = (): Guild => ({
 
 const defaultState = () => ({
   guild: defaultGuild(),
-  mercenaries: INITIAL_MERCENARIES,
+  mercenaries: INITIAL_MERCENARIES.slice(0, 4),
   items: ITEMS_MAP,
   activeMissions: [] as ActiveMission[],
   lastResult: null,
@@ -422,12 +429,19 @@ export const useGameStore = create<GameState>()(
           let duration = template?.durationSeconds ?? 0;
           
           // Apply Artifact: mission_duration
+          const activePerks = getAllActivePerks(state.guild.regionalInfluence);
           const artifacts = state.guild.unlockedArtifactIds.map(id => ARTIFACTS_MAP[id]).filter(Boolean);
           const durationMod = artifacts.reduce((acc, art) => {
             const mod = art.modifiers.find(m => m.type === 'mission_duration');
             return acc + (mod?.value ?? 0);
           }, 0);
-          duration = Math.max(1, Math.floor(duration * (1 + durationMod)));
+          
+          let finalDurationMod = durationMod;
+          // Apply Perk: peaks_storm_riders (-25% duration)
+          if (activePerks.has('peaks_storm_riders')) {
+            finalDurationMod -= 0.25;
+          }
+          duration = Math.max(1, Math.floor(duration * (1 + finalDurationMod)));
 
           // Apply Policy: safety_first
           if (state.guild.activePolicyIds.includes('safety_first')) {
@@ -441,7 +455,6 @@ export const useGameStore = create<GameState>()(
           const updatedStockpile = { ...state.guild.consumableStockpile };
 
           if (state.guild.automationSettings.autoDeploy && state.guild.guildRank >= 4) {
-            // Priority auto-fills: bandages (if high difficulty), field_rations (always), etc.
             const needed = [];
             if (template && template.difficulty >= 10 && updatedStockpile['bandages'] > 0 && !finalConsumables.includes('bandages')) {
               needed.push('bandages');
@@ -449,8 +462,12 @@ export const useGameStore = create<GameState>()(
             if (updatedStockpile['field_rations'] > 0 && !finalConsumables.includes('field_rations')) {
               needed.push('field_rations');
             }
-            if (template && (template.tags.includes('ruin') || template.tags.includes('exploration')) && updatedStockpile['torch_bundle'] > 0 && !finalConsumables.includes('torch_bundle')) {
-              needed.push('torch_bundle');
+            if (template && (template.tags.includes('ruin') || template.tags.includes('exploration'))) {
+              if (updatedStockpile['torch_bundle'] > 0 && !finalConsumables.includes('torch_bundle')) needed.push('torch_bundle');
+              if (updatedStockpile['scouts_cloak'] > 0 && !finalConsumables.includes('scouts_cloak')) needed.push('scouts_cloak');
+            }
+            if (template && (template.tags.includes('social') || template.tags.includes('escort'))) {
+               if (updatedStockpile['sigil_badge'] > 0 && !finalConsumables.includes('sigil_badge')) needed.push('sigil_badge');
             }
 
             for (const itemId of needed) {
@@ -458,6 +475,7 @@ export const useGameStore = create<GameState>()(
                 finalConsumables.push(itemId);
                 updatedStockpile[itemId] -= 1;
                 if (updatedStockpile[itemId] <= 0) delete updatedStockpile[itemId];
+                state.addToast(`Logistics: Auto-deployed ${itemId.replace('_', ' ')}`, 'info');
               }
             }
           }
@@ -516,7 +534,16 @@ export const useGameStore = create<GameState>()(
             const mod = art.modifiers.find(m => m.type === 'gold_gain');
             return acc + (mod?.value ?? 0);
           }, 0);
-          finalGoldEarned = Math.floor(finalGoldEarned * (1 + goldMod));
+          let finalGoldMod = goldMod;
+          // Apply Perk: city_informants (+10% global gold)
+          if (activePerks.has('city_informants')) {
+            finalGoldMod += 0.10;
+          }
+          // Apply Perk: sovereign_authority (+25% global gold)
+          if (activePerks.has('sovereign_authority')) {
+            finalGoldMod += 0.25;
+          }
+          finalGoldEarned = Math.floor(finalGoldEarned * (1 + finalGoldMod));
 
           // Apply perk: ashfen_scouts → +1 loot on exploration/ruin
           const finalItemsEarned = [...result.itemsEarned];
@@ -533,7 +560,9 @@ export const useGameStore = create<GameState>()(
             const mod = art.modifiers.find(m => m.type === 'supply_cap');
             return acc + (mod?.value ?? 0);
           }, 0);
-          const supplyCap = 50 + supplyCapMod; // Base 50
+          // Base cap scales with rank: 100 + rank*200
+          const baseCap = 100 + (state.guild.guildRank * 200);
+          const supplyCap = baseCap + supplyCapMod;
 
           // Update inventory
           const inventoryItemIds = [
@@ -551,11 +580,15 @@ export const useGameStore = create<GameState>()(
 
           // Material drops
           const materials = { ...state.guild.materials };
-          if ((result as MissionResult & { materialsEarned?: Record<string, number> }).materialsEarned) {
-            const extra = (result as MissionResult & { materialsEarned?: Record<string, number> }).materialsEarned!;
-            for (const [matId, qty] of Object.entries(extra)) {
-              materials[matId] = (materials[matId] ?? 0) + qty;
-            }
+          const extraMaterials = (result as MissionResult & { materialsEarned?: Record<string, number> }).materialsEarned ?? {};
+          
+          // Apply Perk: mountain_quarry (+1 iron_scraps from all successful missions)
+          if (activePerks.has('mountain_quarry') && result.outcome !== 'failure') {
+            materials['iron_scraps'] = (materials['iron_scraps'] ?? 0) + 1;
+          }
+
+          for (const [matId, qty] of Object.entries(extraMaterials)) {
+            materials[matId] = (materials[matId] ?? 0) + qty;
           }
 
           // ── Mercenary & Bond Logic ─────────────────────────────────────────
@@ -604,12 +637,20 @@ export const useGameStore = create<GameState>()(
                 moraleDelta *= 2;
               }
 
+              // Skill XP Gain
+              const newSkills = { ...(m.skills ?? {}) };
+              const xpGained = result.skillXP?.[m.id] ?? {};
+              for (const [skillId, xp] of Object.entries(xpGained)) {
+                newSkills[skillId as keyof typeof newSkills] = (newSkills[skillId as keyof typeof newSkills] ?? 0) + xp;
+              }
+
               return {
                 ...m,
                 missionsCompleted: m.missionsCompleted + 1,
                 isInjured: injured,
                 isFatigued: fatigued,
                 morale: Math.max(0, Math.min(10, m.morale + moraleDelta)),
+                skills: newSkills,
               };
             }
 
@@ -794,6 +835,90 @@ export const useGameStore = create<GameState>()(
           return {
             mercenaries: state.mercenaries.map((m) => (m.id === mercId ? updatedMerc : m)),
             guild: { ...state.guild, inventoryItemIds, inventoryDurability: updatedInventoryDurability },
+          };
+        }),
+      
+      autoEquipMercenary: (mercId) =>
+        set((state) => {
+          const merc = state.mercenaries.find(m => m.id === mercId);
+          if (!merc) return {};
+
+          const inventory = state.guild.inventoryItemIds.map((id, idx) => ({
+            id,
+            idx,
+            item: ITEMS_MAP[id] || state.items[id],
+            dur: state.guild.inventoryDurability[idx] ?? 100
+          })).filter(entry => entry.item);
+
+          const slots: EquipmentSlot[] = ['weapon', 'armor', 'accessory'];
+          let currentMerc = { ...merc };
+          let currentInventory = [...state.guild.inventoryItemIds];
+          let currentInventoryDurability = { ...state.guild.inventoryDurability };
+
+          // Class-based stat prioritization
+          let primaryStat: 'strength' | 'agility' | 'intellect' | 'presence' = 'strength';
+          if (merc.classRole === 'Infiltrator' || merc.classRole === 'Scout' || merc.classRole === 'Street Thief') primaryStat = 'agility';
+          if (merc.classRole === 'Scholar' || merc.classRole === 'Hedge Witch') primaryStat = 'intellect';
+          if (merc.classRole === 'Diplomat' || merc.classRole === 'Disgraced Noble') primaryStat = 'presence';
+
+          for (const slot of slots) {
+            const available = inventory.filter(e => e.item.category === slot && e.dur > 0);
+            if (available.length === 0) continue;
+
+            // Find best item based on primary stat bonus
+            const bestEntry = available.reduce((best, curr) => {
+              const bestBonus = best.item.statBonus?.[primaryStat] ?? 0;
+              const currBonus = curr.item.statBonus?.[primaryStat] ?? 0;
+              if (currBonus > bestBonus) return curr;
+              if (currBonus === bestBonus && curr.item.value > best.item.value) return curr;
+              return best;
+            });
+
+            // Compare with current equipment
+            const currentEquippedId = currentMerc.equipment[slot];
+            const currentEquippedItem = currentEquippedId ? (ITEMS_MAP[currentEquippedId] || state.items[currentEquippedId]) : null;
+            const currentBonus = currentEquippedItem?.statBonus?.[primaryStat] ?? -1;
+            const bestBonus = bestEntry.item.statBonus?.[primaryStat] ?? 0;
+
+            if (bestBonus > currentBonus || !currentEquippedItem) {
+              // Equip it! (Simulate the logic of equipItem)
+              const previousId = currentMerc.equipment[slot];
+              const previousDur = currentMerc.equipmentDurability?.[slot] ?? 100;
+
+              currentMerc.equipment = { ...currentMerc.equipment, [slot]: bestEntry.id };
+              currentMerc.equipmentDurability = { ...currentMerc.equipmentDurability, [slot]: bestEntry.dur };
+
+              // Remove from inventory
+              const itemIdx = currentInventory.indexOf(bestEntry.id);
+              if (itemIdx !== -1) {
+                currentInventory.splice(itemIdx, 1);
+                // Shift durabilities
+                const newDurs: Record<number, number> = {};
+                Object.entries(currentInventoryDurability).forEach(([idxStr, d]) => {
+                  const idx = parseInt(idxStr);
+                  if (idx < itemIdx) newDurs[idx] = d;
+                  else if (idx > itemIdx) newDurs[idx - 1] = d;
+                });
+                currentInventoryDurability = newDurs;
+              }
+
+              // Add previous back to inventory
+              if (previousId) {
+                currentInventory.push(previousId);
+                if (previousDur < 100) {
+                  currentInventoryDurability[currentInventory.length - 1] = previousDur;
+                }
+              }
+            }
+          }
+
+          return {
+            mercenaries: state.mercenaries.map(m => m.id === mercId ? currentMerc : m),
+            guild: {
+              ...state.guild,
+              inventoryItemIds: currentInventory,
+              inventoryDurability: currentInventoryDurability
+            }
           };
         }),
 
@@ -1084,6 +1209,9 @@ export const useGameStore = create<GameState>()(
               presence: Math.min(10, recruit.stats.presence + bonusStats),
             },
             traits: recruit.traits,
+            skills: recruit.skills || {},
+            level: recruit.level || 1,
+            classRole: recruit.classRole,
             relationships: [],
             equipment: {},
             isInjured: false,
@@ -1367,6 +1495,25 @@ export const useGameStore = create<GameState>()(
           const tavern = state.guild.rooms.find(r => r.id === 'room_tavern');
           const barracks = state.guild.rooms.find(r => r.id === 'room_barracks');
           
+          // ── Dynamic World Events (Phase 5 Polish) ──────────────────────────
+          // 0.5% chance per second to trigger a minor world shift
+          if (seededRandom(now.toString()) < 0.005 * cappedDelta) {
+            const events = [
+              { msg: 'A sudden fog rolls over the Ashfen Marsh.', weather: 'fog' },
+              { msg: 'Heavy rain batters the Grey Mountains.', weather: 'rain' },
+              { msg: 'A clear sky opens over the City Below.', weather: 'clear' },
+              { msg: 'A local merchant offers a discount on supplies!', supplies: 20 },
+              { msg: 'A wandering bard boosts the guild\'s spirits.', morale: 5 },
+            ];
+            const event = events[Math.floor(seededRandom(now.toString() + 'ev') * events.length)];
+            state.addToast(event.msg, 'info');
+            
+            if (event.weather) state.setWeather(event.weather as any);
+            if (event.supplies) state.guild.resources.supplies += event.supplies;
+            if (event.morale) state.guild.guildMorale = Math.min(100, state.guild.guildMorale + event.morale);
+          }
+          
+          const activePerks = getAllActivePerks(state.guild.regionalInfluence);
           const bizMod = 1 + (state.guild.businessLevel * 0.1);
           const goldRate = (tavern ? getRoomEffect(tavern, 'passiveGold') : 0) * (1 + (state.guild.guildRank - 1) * 0.2) * bizMod;
           const suppliesRate = (barracks ? getRoomEffect(barracks, 'passiveSupplies') : 0) * (1 + (state.guild.guildRank - 1) * 0.2) * bizMod;
@@ -1403,14 +1550,19 @@ export const useGameStore = create<GameState>()(
                 
                 if (newProgress >= 100) {
                   const statToBoost = m.trainingStat ?? 'strength';
+                  const currentStat = m.stats[statToBoost];
+                  
                   updatedMercs[i] = {
                     ...m,
                     trainingProgress: newProgress - 100,
+                    level: (m.level ?? 1) + 1,
                     stats: {
                       ...m.stats,
-                      [statToBoost]: Math.min(10, m.stats[statToBoost] + 0.1)
+                      [statToBoost]: Math.min(10, currentStat + 1)
                     }
                   };
+                  // Add Level Up Toast
+                  state.addToast(`${m.name} leveled up! (${statToBoost.toUpperCase()} +1)`, 'success');
                 } else {
                   updatedMercs[i] = { ...m, trainingProgress: newProgress };
                 }
@@ -1549,11 +1701,21 @@ export const useGameStore = create<GameState>()(
                 }
               }
             }
+            // 2. Passive Morale Recovery
+            // Perk: ashfen_herbalist → +50% morale recovery
+            let moraleRecRate = 0.001 * (1 + (state.guild.businessLevel * 0.05));
+            if (activePerks.has('ashfen_herbalist')) moraleRecRate *= 1.5;
+            
+            if (!m.isTraining && !m.isInjured && m.morale < 10) {
+              updatedMercs[i] = { ...m, morale: Math.min(10, m.morale + (cappedDelta * moraleRecRate)) };
+            }
           }
 
-          // Handle Recruit Refresh
+          // Handle Recruit Refresh (Perk: city_contacts)
           const lastRefreshTime = new Date(state.lastRecruitRefresh).getTime();
-          const refreshCooldownMs = 900 * 1000; // 15 mins
+          let refreshCooldownMs = 900 * 1000; // 15 mins default
+          if (activePerks.has('city_contacts')) refreshCooldownMs = 300 * 1000; // 5 mins
+          
           let newRecruits = state.availableRecruits;
           let newRefreshTimestamp = state.lastRecruitRefresh;
 
@@ -1609,7 +1771,12 @@ export const useGameStore = create<GameState>()(
         const forgeLevel = forge ? getRoomEffect(forge, 'forgeLevel') : 1;
 
         const goldCap = 1000 + state.guild.guildRank * 1000;
-        const suppliesCap = 100 + state.guild.guildRank * 200;
+        const artifacts = state.guild.unlockedArtifactIds.map(id => ARTIFACTS_MAP[id]).filter(Boolean);
+        const supplyCapMod = artifacts.reduce((acc, art) => {
+          const mod = art.modifiers.find(m => m.type === 'supply_cap');
+          return acc + (mod?.value ?? 0);
+        }, 0);
+        const suppliesCap = 100 + state.guild.guildRank * 200 + supplyCapMod;
 
         for (let i = 0; i < steps; i++) {
           const stepNow = state.lastTickTime + (i * stepDelta * 1000);
@@ -1639,7 +1806,8 @@ export const useGameStore = create<GameState>()(
                   currentMercs[j] = {
                     ...m,
                     trainingProgress: progress - 100,
-                    stats: { ...m.stats, [stat]: Math.min(10, m.stats[stat] + 0.1) }
+                    level: (m.level ?? 1) + 1,
+                    stats: { ...m.stats, [stat]: Math.min(10, m.stats[stat] + 1) }
                   };
                 } else {
                   currentMercs[j] = { ...m, trainingProgress: progress };
@@ -2052,8 +2220,8 @@ export const useGameStore = create<GameState>()(
               ...state.toasts,
               { id: Math.random().toString(36).slice(2), message: `Business expanded to level ${state.guild.businessLevel + 1}!`, type: 'success', createdAt: Date.now() }
             ].slice(-5)
-          };
-          startCampaign: () =>
+      },
+      startCampaign: () =>
         set((state) => ({
           campaignActive: true,
           campaignStage: 0,
@@ -2085,7 +2253,65 @@ export const useGameStore = create<GameState>()(
             ].slice(-5)
           };
         }),
-    }),
+      prestigeMercenary: (mercId) =>
+        set((state) => {
+          const merc = state.mercenaries.find(m => m.id === mercId);
+          if (!merc || merc.isLegendary) return {};
+
+          // Requirements: 20 missions completed AND 250 Renown
+          const PRESTIGE_COST = 250;
+          const MISSIONS_REQ = 20;
+
+          if (merc.missionsCompleted < MISSIONS_REQ || state.guild.resources.renown < PRESTIGE_COST) {
+            state.addToast(`Requirement failed: ${MISSIONS_REQ} missions and ${PRESTIGE_COST} renown needed.`, 'error');
+            return {};
+          }
+
+          // Generate a unique trait based on their best stat
+          const bestStat = Object.entries(merc.stats).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+          let uniqueTrait = '';
+          switch (bestStat) {
+            case 'strength': uniqueTrait = 'Titan\'s Might: +10 Party Score on Combat missions.'; break;
+            case 'agility': uniqueTrait = 'Wind-Walker: +10 Party Score on Stealth missions.'; break;
+            case 'intellect': uniqueTrait = 'Oracle: +10 Party Score on Ruin/Exploration missions.'; break;
+            case 'presence': uniqueTrait = 'Sovereign Voice: +10 Party Score on Social missions.'; break;
+          }
+
+          const updatedMerc: Mercenary = {
+            ...merc,
+            isLegendary: true,
+            uniqueTrait,
+            title: `Legendary ${merc.title}`,
+            stats: {
+              strength: Math.min(10, merc.stats.strength + 1),
+              agility: Math.min(10, merc.stats.agility + 1),
+              intellect: Math.min(10, merc.stats.intellect + 1),
+              presence: Math.min(10, merc.stats.presence + 1),
+            }
+          };
+
+          const entry: ChronicleEntry = {
+            id: `chronicle_${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            type: 'hero_unlock',
+            title: `Legend Risen: ${merc.name}`,
+            description: `${merc.name} has transcended their mortal limits and entered the guild's eternal chronicles.`,
+            icon: '🔥',
+          };
+
+          return {
+            mercenaries: state.mercenaries.map(m => m.id === mercId ? updatedMerc : m),
+            guild: {
+              ...state.guild,
+              resources: { ...state.guild.resources, renown: state.guild.resources.renown - PRESTIGE_COST },
+              chronicles: [entry, ...state.guild.chronicles].slice(0, 100),
+            },
+            toasts: [
+              ...state.toasts,
+              { id: Math.random().toString(36).slice(2), message: `${merc.name} has become a Legend!`, type: 'warning', createdAt: Date.now() }
+            ].slice(-5)
+          };
+        }),
 
       addToast: (message, type = 'info') =>
         set((state) => ({
@@ -2099,6 +2325,33 @@ export const useGameStore = create<GameState>()(
         set((state) => ({
           toasts: state.toasts.filter((t) => t.id !== id),
         })),
+
+      resetGame: () => {
+        if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+          localStorage.removeItem('banner-coin-save');
+          window.location.reload();
+        }
+      },
+
+      exportSave: () => {
+        const state = get();
+        return btoa(JSON.stringify(state)); // Simple base64 encoding
+      },
+
+      importSave: (encodedJson: string) => {
+        try {
+          const json = atob(encodedJson);
+          const state = JSON.parse(json);
+          // Simple validation
+          if (state && state.guild && state.mercenaries) {
+            set({ ...state, isInMainMenu: true, activeScreen: 'dashboard' });
+            return true;
+          }
+        } catch (e) {
+          console.error('Failed to import save', e);
+        }
+        return false;
+      },
     }),
     {
       name: 'banner-coin-save',

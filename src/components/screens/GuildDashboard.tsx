@@ -21,7 +21,7 @@ const WEATHER_ICON: Record<WeatherId, string> = {
 };
 
 export function GuildDashboard() {
-  const { guild, activeMissions, mercenaries, pendingEvents, currentTime, tick, investInBusiness, setScreen, upgradeRoom, resolveEventChoice, items } = useGameStore();
+  const { guild, activeMissions, mercenaries, pendingEvents, currentTime, tick, investInBusiness, setScreen, upgradeRoom, resolveEventChoice, items, resetSave } = useGameStore();
 
   const availableMercs = mercenaries.filter((m) => !m.isInjured && !m.isFatigued);
   const injuredMercs = mercenaries.filter((m) => m.isInjured);
@@ -157,6 +157,7 @@ export function GuildDashboard() {
             glow: guild.guildMorale >= 80 ? 'shadow-amber-500/20' : guild.guildMorale < 30 ? 'shadow-rose-500/20' : 'shadow-stone-500/20',
             moraleLabel: guild.guildMorale >= 80 ? 'High' : guild.guildMorale < 30 ? 'Low' : 'Steady',
           },
+        ].map(r => {
           const moraleLabel = 'moraleLabel' in r ? (r as { moraleLabel: string }).moraleLabel : null;
           return (
           <motion.div 
@@ -293,13 +294,21 @@ export function GuildDashboard() {
                 <span className="text-xl">🧴</span>
                 <span className="text-xs font-bold text-stone-300">Net Supplies / sec</span>
               </div>
-              <span className={`font-mono font-bold ${((guild.rooms.reduce((s, r) => s + getRoomEffect(r, 'passiveSupplies'), 0) * (1 + (guild.guildRank - 1) * 0.2) * (1 + (guild.businessLevel * 0.1))) - (mercenaries.length * 0.01)) >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
-                {((guild.rooms.reduce((s, r) => s + getRoomEffect(r, 'passiveSupplies'), 0) * (1 + (guild.guildRank - 1) * 0.2) * (1 + (guild.businessLevel * 0.1))) - (mercenaries.length * 0.01)).toFixed(2)}
+              <span className={`font-mono font-bold ${
+                ((guild.rooms.reduce((s, r) => s + getRoomEffect(r, 'passiveSupplies'), 0)
+                  * (1 + (guild.guildRank - 1) * 0.2)
+                  * (1 + (guild.businessLevel * 0.1)))
+                  - (mercenaries.length * 0.1)) >= 0 ? 'text-emerald-400' : 'text-rose-500'
+              }`}>
+                {((guild.rooms.reduce((s, r) => s + getRoomEffect(r, 'passiveSupplies'), 0)
+                  * (1 + (guild.guildRank - 1) * 0.2)
+                  * (1 + (guild.businessLevel * 0.1)))
+                  - (mercenaries.length * 0.1)).toFixed(2)}
               </span>
             </div>
             <div className="pt-4 border-t border-white/5">
               <p className="text-[9px] text-stone-600 leading-relaxed font-black uppercase tracking-widest">
-                Roster Maintenance: -{(mercenaries.length * 0.01).toFixed(2)} supplies/sec
+                Roster Maintenance: -{(mercenaries.length * 0.1).toFixed(2)} supplies/sec
               </p>
             </div>
           </div>
@@ -311,10 +320,10 @@ export function GuildDashboard() {
         <div className="lg:col-span-1 space-y-6">
           {/* Pending Events */}
           {pendingEvents.length > 0 && (
-            <div className="glass rounded-2xl p-6 border-l-4 border-l-primary shadow-xl animate-pulse">
+            <div className="glass rounded-2xl p-6 border-l-4 border-l-primary shadow-xl">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <span className="text-primary text-xl">📢</span> Action Required
-                <span className="ml-auto bg-primary text-stone-950 text-[10px] font-black px-2 py-1 rounded-full">
+                <span className="ml-auto bg-primary text-stone-950 text-[10px] font-black px-2 py-1 rounded-full animate-pulse">
                   {pendingEvents.length}
                 </span>
               </h3>
@@ -357,10 +366,11 @@ export function GuildDashboard() {
                 {activeMissions.map((am) => {
                   const remaining = Math.max(0, Math.floor((new Date(am.endTime).getTime() - useGameStore.getState().currentTime) / 1000));
                   const isDone = remaining <= 0;
+                  const missionTemplate = [...MISSION_TEMPLATES, ...CAMPAIGN_MISSIONS].find(t => t.id === am.templateId);
                   return (
                     <div key={am.missionRunId} className="glass-dark p-4 rounded-xl border border-white/5 group hover:border-primary/30 transition-colors cursor-pointer" onClick={() => setScreen('missions')}>
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-bold text-stone-300 uppercase tracking-tighter">Mission #{am.missionRunId.slice(-4)}</span>
+                        <span className="text-xs font-bold text-stone-300 uppercase tracking-tighter truncate max-w-[150px]">{missionTemplate?.name ?? `Mission #${am.missionRunId.slice(-4)}`}</span>
                         <span className={`text-[10px] font-mono font-bold ${isDone ? 'text-primary animate-pulse' : 'text-stone-500'}`}>
                           {isDone ? 'READY' : `${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`}
                         </span>
@@ -369,7 +379,14 @@ export function GuildDashboard() {
                         <div className="flex-1 h-1 bg-black/40 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-primary transition-all duration-1000 ease-linear shadow-[0_0_8px_rgba(251,191,36,0.5)]"
-                            style={{ width: isDone ? '100%' : '50%' }}
+                            style={{ 
+                              width: (() => {
+                                const totalMs = new Date(am.endTime).getTime() - new Date(am.startedAt).getTime();
+                                const elapsedMs = useGameStore.getState().currentTime - new Date(am.startedAt).getTime();
+                                const pct = totalMs > 0 ? Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100)) : 0;
+                                return isDone ? '100%' : `${pct}%`;
+                              })()
+                            }}
                           />
                         </div>
                       </div>
@@ -519,9 +536,15 @@ export function GuildDashboard() {
                     >
                       {room.level >= room.maxLevel 
                         ? 'MAX LEVEL' 
-                        : canAffordUpgrade(room.id)
-                          ? `Upgrade (Lvl ${room.level + 1})`
-                          : `Insufficient Funds`}
+                        : (() => {
+                            const roomData = guild.rooms.find((r) => r.id === room.id);
+                            if (!roomData) return 'Upgrade';
+                            const cost = roomData.levels[roomData.level - 1].upgradeCost;
+                            if (guild.resources.gold < cost.gold) return `Need ${cost.gold} Gold`;
+                            if (guild.resources.supplies < cost.supplies) return `Need ${cost.supplies} Supplies`;
+                            if (guild.resources.renown < cost.renown) return `Need ${cost.renown} Renown`;
+                            return `Upgrade (Lvl ${room.level + 1})`;
+                          })()}
                     </button>
                   </div>
                 ))}
@@ -539,7 +562,7 @@ export function GuildDashboard() {
           Destructive Reset Save Data
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

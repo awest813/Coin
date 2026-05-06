@@ -52,6 +52,19 @@ export function MissionCard({ mission, onAssign, disabled }: Props) {
             "{mission.description}"
           </p>
 
+          {mission.recommendedClasses && (
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] text-stone-500 font-black uppercase tracking-widest">Recommended:</span>
+              <div className="flex gap-1.5">
+                {mission.recommendedClasses.map(cls => (
+                  <span key={cls} className="text-[9px] text-primary/80 font-bold border border-primary/20 px-1.5 py-0.5 rounded-md bg-primary/5">
+                    {cls}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="pt-2">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] mb-2">
               <span className={`${diff.color} drop-shadow-sm`}>{diff.label} Difficulty</span>

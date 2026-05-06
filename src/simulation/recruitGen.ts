@@ -50,6 +50,14 @@ export function generateRecruit(seed: string): GeneratedRecruit {
     presence: seededInt(seed + 'pre', presence[0], presence[1]),
   };
 
+  const isVeteran = seededRandom(seed + 'vet') < 0.10; // 10% chance
+  if (isVeteran) {
+    stats.strength = Math.min(10, stats.strength + 1);
+    stats.agility = Math.min(10, stats.agility + 1);
+    stats.intellect = Math.min(10, stats.intellect + 1);
+    stats.presence = Math.min(10, stats.presence + 1);
+  }
+
   // Pick 1-2 traits from the archetype's pool
   const traitCount = seededRandom(seed + 'traitc') < 0.5 ? 1 : 2;
   const shuffledTraits = [...archetype.traitPool].sort(
@@ -63,9 +71,36 @@ export function generateRecruit(seed: string): GeneratedRecruit {
     scoreBonus: t.scoreBonus,
   }));
 
+  if (isVeteran) {
+    pickedTraits.push({
+      id: `trait_recruit_${seed}_vet`,
+      name: 'Veteran of the Pits',
+      tag: 'brave' as TraitTag,
+      description: 'This fighter has survived dozens of arena matches. +3 score in combat.',
+      scoreBonus: 3
+    });
+  }
+
   // Hire cost: base + stat total modifier
   const statTotal = stats.strength + stats.agility + stats.intellect + stats.presence;
   const hireCost = archetype.hireCostBase + Math.floor((statTotal - 20) * 2.5);
+
+  // Generate starting skills based on classRole
+  const skills: Record<string, number> = {};
+  if (archetype.classRole === 'Sellsword' || archetype.classRole === 'Tribal Warrior' || archetype.classRole === 'Former Guard') {
+    skills.tactics = seededInt(seed + 'sk1', 5, 15);
+  } else if (archetype.classRole === 'Scout' || archetype.classRole === 'Wilderness Ranger') {
+    skills.survival = seededInt(seed + 'sk2', 10, 20);
+    skills.subterfuge = seededInt(seed + 'sk3', 5, 10);
+  } else if (archetype.classRole === 'Street Thief' || archetype.classRole === 'Pirate Deserter') {
+    skills.subterfuge = seededInt(seed + 'sk4', 10, 25);
+  } else if (archetype.classRole === 'Hedge Witch' || archetype.classRole === 'Hedge Mage' || archetype.classRole === 'Field Surgeon') {
+    skills.survival = seededInt(seed + 'sk5', 5, 15);
+    skills.negotiation = seededInt(seed + 'sk6', 5, 10);
+  } else if (archetype.classRole === 'Disgraced Noble' || archetype.classRole === 'Wandering Monk') {
+    skills.negotiation = seededInt(seed + 'sk7', 10, 20);
+    skills.tactics = seededInt(seed + 'sk8', 5, 10);
+  }
 
   return {
     id: `recruit_${seed}`,
@@ -76,7 +111,10 @@ export function generateRecruit(seed: string): GeneratedRecruit {
     background,
     stats,
     traits: pickedTraits,
-    hireCost: Math.max(archetype.hireCostBase - 20, hireCost),
+    skills,
+    hireCost: isVeteran ? Math.floor(hireCost * 1.5) : Math.max(archetype.hireCostBase - 20, hireCost),
+    level: isVeteran ? 3 : 1,
+    isVeteran,
     archetypeId: archetype.id,
   };
 }

@@ -24,6 +24,7 @@ export interface ScoreBreakdownEntry {
   traitBonus: number;
   equipBonus: number;
   relBonus: number;
+  weaponBonus?: number;
   statusPenalty: number;
   total: number;
 }
@@ -45,6 +46,8 @@ export interface MissionTemplate {
   eventSnippets?: string[];
   /** Is this part of the Phase 7: Grand Campaign? */
   isCampaign?: boolean;
+  /** Suggested class roles for this mission (UI hint) */
+  recommendedClasses?: string[];
 }
 
 export interface ActiveMission {
@@ -77,6 +80,8 @@ export interface MissionResult {
   itemsEarned: string[]; // item IDs
   injuredMercIds: string[];
   fatiguedMercIds: string[];
+  /** Skill XP gained per merc: mercId -> { skillId: xp } */
+  skillXP?: Record<string, Record<string, number>>;
   flavorText: string;
   partyScore: number;
   difficulty: number;

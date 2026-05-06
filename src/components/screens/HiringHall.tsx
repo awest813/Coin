@@ -78,7 +78,7 @@ function RecruitCard({
         {rosterFull
           ? 'Roster Capacity Reached'
           : !canAfford
-          ? `💰 ${recruit.hireCost}g — INSURMOUNTABLE`
+          ? `💰 ${recruit.hireCost}g — Insufficient Funds`
           : `Deploy for ${recruit.hireCost}g`}
       </button>
     </div>
@@ -127,12 +127,23 @@ export function HiringHall() {
                <span className="text-[11px] font-mono font-bold text-stone-300">
                  {(() => {
                     const last = new Date(useGameStore.getState().lastRecruitRefresh).getTime();
-                    const diff = Math.max(0, 900 - (useGameStore.getState().currentTime - last) / 1000);
+                    const { guild: g } = useGameStore.getState();
+                    const hasContactsPerk = Object.values(g.regionalInfluence).some(
+                      ri => ri.unlockedPerks.includes('city_contacts')
+                    );
+                    const cooldown = hasContactsPerk ? 300 : 900;
+                    const diff = Math.max(0, cooldown - (useGameStore.getState().currentTime - last) / 1000);
                     const m = Math.floor(diff / 60);
                     const s = Math.floor(diff % 60);
                     return `${m}:${s.toString().padStart(2, '0')}`;
                  })()}
                </span>
+               {(() => {
+                 const { guild: g } = useGameStore.getState();
+                 return Object.values(g.regionalInfluence).some(ri => ri.unlockedPerks.includes('city_contacts'));
+               })() && (
+                 <span className="text-[7px] text-primary font-black uppercase tracking-widest mt-0.5">City Contacts Active</span>
+               )}
             </div>
             
             <div className="w-[1px] h-6 bg-white/5" />

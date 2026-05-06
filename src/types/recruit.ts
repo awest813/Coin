@@ -26,5 +26,7 @@ export interface GeneratedRecruit {
   stats: { strength: number; agility: number; intellect: number; presence: number };
   traits: Array<{ id: string; name: string; tag: TraitTag; description: string; scoreBonus: number }>;
   hireCost: number;
+  level?: number;
+  isVeteran?: boolean;
   archetypeId: string;
 }

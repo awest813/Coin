@@ -10,7 +10,8 @@ export interface HeroQuestStage {
 export interface HeroQuestChoice {
   label: string;
   requirement?: {
-    stat: keyof Mercenary['stats'];
+    type?: 'stat' | 'skill';
+    stat: string; // key of stats or skills
     value: number;
   };
   outcome: {
