@@ -400,7 +400,6 @@ function computeProgression(
   if (guildRank >= 10 && !unlockedRegions.includes('Sovereign Keep')) {
     unlockedRegions.push('Sovereign Keep');
   }
-  }
 
   // Hero Quest Triggering
   let triggeredHeroQuestId: string | null = null;
@@ -2220,7 +2219,8 @@ export const useGameStore = create<GameState>()(
               ...state.toasts,
               { id: Math.random().toString(36).slice(2), message: `Business expanded to level ${state.guild.businessLevel + 1}!`, type: 'success', createdAt: Date.now() }
             ].slice(-5)
-      },
+          };
+        }),
       startCampaign: () =>
         set((state) => ({
           campaignActive: true,
