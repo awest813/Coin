@@ -563,10 +563,19 @@ export const useGameStore = create<GameState>()(
           const baseCap = 100 + (state.guild.guildRank * 200);
           const supplyCap = baseCap + supplyCapMod;
 
+          // Separate items from artifacts
+          const newItems = finalItemsEarned.filter(id => !ARTIFACTS_MAP[id]);
+          const newArtifacts = finalItemsEarned.filter(id => ARTIFACTS_MAP[id] && !state.guild.unlockedArtifactIds.includes(id));
+
           // Update inventory
           const inventoryItemIds = [
             ...state.guild.inventoryItemIds,
-            ...finalItemsEarned,
+            ...newItems,
+          ];
+
+          const unlockedArtifactIds = [
+            ...state.guild.unlockedArtifactIds,
+            ...newArtifacts,
           ];
 
           // Update guild resources
@@ -739,6 +748,7 @@ export const useGameStore = create<GameState>()(
             regionalInfluence: updatedRegionalInfluence,
             chronicles: chronicles.slice(0, 100),
             guildMorale: newGuildMorale,
+            unlockedArtifactIds,
           };
 
           // ── Campaign Progress ─────────────────────────────────────────────
@@ -1760,6 +1770,7 @@ export const useGameStore = create<GameState>()(
         const currentMercs = [...state.mercenaries];
         let currentMissions = [...state.activeMissions];
         const currentInventory = [...state.guild.inventoryItemIds];
+        const currentUnlockedArtifactIds = [...state.guild.unlockedArtifactIds];
         let totalMissionsCompleted = 0;
 
         const tavern = state.guild.rooms.find(r => r.id === 'room_tavern');
@@ -1839,7 +1850,14 @@ export const useGameStore = create<GameState>()(
                   });
                   currentResources.gold = Math.min(goldCap, currentResources.gold + result.goldEarned);
                   currentResources.renown += result.renownEarned;
-                  currentInventory.push(...result.itemsEarned);
+                  
+                  for (const id of result.itemsEarned) {
+                    if (ARTIFACTS_MAP[id]) {
+                      if (!currentUnlockedArtifactIds.includes(id)) currentUnlockedArtifactIds.push(id);
+                    } else {
+                      currentInventory.push(id);
+                    }
+                  }
                   totalMissionsCompleted++;
                   for (let k = 0; k < currentMercs.length; k++) {
                     if (result.injuredMercIds.includes(currentMercs[k].id)) currentMercs[k].isInjured = true;
@@ -1889,6 +1907,7 @@ export const useGameStore = create<GameState>()(
           guild: {
             ...state.guild,
             inventoryItemIds: currentInventory,
+            unlockedArtifactIds: currentUnlockedArtifactIds,
             resources: {
               ...state.guild.resources,
               gold: Math.floor(currentResources.gold),
@@ -1983,13 +2002,14 @@ export const useGameStore = create<GameState>()(
           type: 'hero_unlock',
           title: `Legend Recruited: ${rewardMerc.name}`,
           description: `The deeds of the guild have drawn ${rewardMerc.name} ${rewardMerc.title} to our banner.`,
-          icon: '👑',
+          icon: '🌟',
         };
 
         return {
           mercenaries: [...state.mercenaries, rewardMerc],
           completedHeroQuestIds: [...state.completedHeroQuestIds, questId],
           activeHeroQuest: null,
+          activeHeroQuestStageId: null,
           guild: {
             ...state.guild,
             chronicles: [entry, ...state.guild.chronicles].slice(0, 100),
@@ -2016,14 +2036,17 @@ export const useGameStore = create<GameState>()(
         const choice = currentStage.choices[choiceIndex];
         if (!choice) return {};
 
-        // Stat Check: If choice has a requirement, check if anyone in the roster meets it
+        // Stat/Skill Check: If choice has a requirement, check if anyone in the roster meets it
         if (choice.requirement) {
-          const { stat, value } = choice.requirement;
-          const meetsReq = state.mercenaries.some(m => m.stats[stat] >= value);
-          if (!meetsReq) {
-             // Optional: Return a "Failure" outcome or block the choice in UI
-             return {}; 
-          }
+          const { type, stat, value } = choice.requirement;
+          const meetsReq = state.mercenaries.some(m => {
+            if (type === 'skill') {
+              return (m.skills?.[stat as keyof typeof m.skills] ?? 0) >= value;
+            }
+            return (m.stats[stat as keyof MercStats] ?? 0) >= value;
+          });
+          
+          if (!meetsReq) return {};
         }
 
         if (choice.outcome.nextStageId) {

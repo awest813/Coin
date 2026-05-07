@@ -93,7 +93,7 @@ export const CAMPAIGN_MISSIONS: MissionTemplate[] = [
     reward: {
       gold: 5000,
       renown: 500,
-      possibleItems: ['sovereign_aegis'],
+      possibleItems: ['art_sovereign_aegis'],
     },
     flavorText: {
       success: 'The Banner of Coin flies over the Sovereign Keep. The world is ours.',

@@ -14,6 +14,10 @@
   
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
   
   --font-heading: 'Cinzel', serif;
   --font-sans: 'Outfit', sans-serif;
@@ -112,7 +116,11 @@
     @apply bg-black/40;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full hover:bg-primary/50 transition-colors;
+    @apply bg-white/10 rounded-full transition-colors;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(251, 191, 36, 0.5); /* Fallback */
+    background-color: color-mix(in oklch, var(--primary), transparent 50%);
   }
 
   .text-glow {
@@ -137,10 +145,12 @@
     padding: 2rem;
     transition: transform 500ms ease, background-color 500ms ease, border-color 500ms ease, box-shadow 500ms ease;
     backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
 
   .premium-card:hover {
     background: rgb(255 255 255 / 0.1);
+    border-color: rgba(251, 191, 36, 0.3); /* Fallback */
     border-color: oklch(0.78 0.16 45 / 0.3);
     box-shadow: 0 20px 40px -15px rgb(0 0 0 / 0.7), 0 0 20px rgb(251 191 36 / 0.1);
     transform: translateY(-0.5rem);
@@ -437,9 +447,7 @@
   94% { opacity: 0.38; }
 }
 
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.01); border-color: oklch(0.78 0.16 45 / 0.4); }
+  50% { opacity: 1; transform: scale(1.01); border-color: rgba(251, 191, 36, 0.4); border-color: oklch(0.78 0.16 45 / 0.4); }
 }
 
 .animate-shimmer { animation: shimmer 2s infinite; }
@@ -467,8 +475,8 @@
 }
 
 /* Custom Selection Glow */
-::selection {
   background: var(--primary);
+  color: #1c1917; /* Fallback for oklch(0.05 0.01 40) */
   color: oklch(0.05 0.01 40);
 }
 
@@ -479,6 +487,7 @@
     linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
 }
 
 @keyframes gold-shimmer {
@@ -502,4 +511,8 @@
 
 .animate-shake {
   animation: screen-shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.progress-bar-fill {
+  width: var(--width, 0%);
 }

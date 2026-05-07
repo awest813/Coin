@@ -92,7 +92,7 @@ export const WarRoom: React.FC = () => {
                <div className="h-1.5 bg-black/40 rounded-full mt-4 overflow-hidden">
                  <div 
                    className="h-full bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.5)] transition-all duration-1000"
-                   style={{ width: `${(campaignStage / CAMPAIGN_MISSIONS.length * 100)}%` }}
+                   style={{ '--width': `${(campaignStage / CAMPAIGN_MISSIONS.length * 100)}%` } as any}
                  />
                </div>
             </div>
@@ -218,7 +218,8 @@ export const WarRoom: React.FC = () => {
             )}
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 };

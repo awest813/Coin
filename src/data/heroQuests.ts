@@ -9,7 +9,7 @@ export const HERO_QUESTS: HeroQuest[] = [
       minRenown: 50,
       minContracts: 10,
     },
-    rewardMercenaryId: 'valerius',
+    rewardMercenaryId: 'merc_legend_valerius',
     stages: [
       {
         id: 'valerius_1',
@@ -49,7 +49,7 @@ export const HERO_QUESTS: HeroQuest[] = [
           },
           {
             label: 'Observe from the shadows (Intellect check)',
-            requirement: { stat: 'intellect', value: 7 },
+            requirement: { type: 'stat', stat: 'intellect', value: 7 },
             outcome: {
               text: 'You realize the "merchants" are actually imperial spies. By intervening correctly, you secure a political favor and the respect of the Oracle. "You see what others miss," Valerius remarks.',
               success: true,
@@ -85,7 +85,7 @@ export const HERO_QUESTS: HeroQuest[] = [
           },
           {
             label: 'Catch her with quick reflexes (Agility check)',
-            requirement: { stat: 'agility', value: 8 },
+            requirement: { type: 'stat', stat: 'agility', value: 8 },
             outcome: {
               text: 'You grab her arm just as she starts to fade. The physical contact seems to anchor her. She looks at you with a mix of shock and relief. "You... you have a strong grip on this world."',
               nextStageId: 'saria_2',
@@ -127,7 +127,7 @@ export const HERO_QUESTS: HeroQuest[] = [
         choices: [
           {
             label: 'Face him head-on (Strength check)',
-            requirement: { stat: 'strength', value: 9 },
+            requirement: { type: 'stat', stat: 'strength', value: 9 },
             outcome: {
               text: 'The hammer blow rings out like a mountain cracking. Your mercenary doesn\'t budge. Grom grins. "Solid. I like solid."',
               success: true,
@@ -154,7 +154,7 @@ export const HERO_QUESTS: HeroQuest[] = [
         choices: [
           {
             label: 'Intercept her path (Agility check)',
-            requirement: { stat: 'agility', value: 9 },
+            requirement: { type: 'stat', stat: 'agility', value: 9 },
             outcome: {
               text: 'You predict her leap and catch her mid-air. She laughs, pulling back her hood. "Not bad for a guildmaster. I might have a use for you."',
               success: true,
